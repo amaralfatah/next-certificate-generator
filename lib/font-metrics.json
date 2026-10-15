@@ -1,0 +1,58 @@
+{
+  "cinzel-400": {
+    "ascent": 0.976,
+    "descent": 0.372
+  },
+  "cinzel-700": {
+    "ascent": 0.976,
+    "descent": 0.372
+  },
+  "eb-garamond-400": {
+    "ascent": 1.007,
+    "descent": 0.298
+  },
+  "eb-garamond-600": {
+    "ascent": 1.007,
+    "descent": 0.298
+  },
+  "great-vibes-400": {
+    "ascent": 0.851,
+    "descent": 0.401
+  },
+  "lora-400": {
+    "ascent": 1.006,
+    "descent": 0.274
+  },
+  "lora-700": {
+    "ascent": 1.006,
+    "descent": 0.274
+  },
+  "montserrat-400": {
+    "ascent": 0.968,
+    "descent": 0.251
+  },
+  "montserrat-700": {
+    "ascent": 0.968,
+    "descent": 0.251
+  },
+  "pinyon-script-400": {
+    "ascent": 0.8633,
+    "descent": 0.3843
+  },
+  "playfair-display-400": {
+    "ascent": 1.082,
+    "descent": 0.251
+  },
+  "playfair-display-700": {
+    "ascent": 1.082,
+    "descent": 0.251
+  },
+  "plus-jakarta-sans-400": {
+    "ascent": 1.038,
+    "descent": 0.222
+  },
+  "plus-jakarta-sans-700": {
+    "ascent": 1.038,
+    "descent": 0.222
+  }
+}
