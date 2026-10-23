@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, CircleAlert, Download, Loader2, Mail, RotateCw, ShieldCheck } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Seal } from "@/components/seal";
 import { Turnstile, TURNSTILE_SITE_KEY } from "@/components/turnstile";
 import { Button, Field, Input, Notice, Select } from "@/components/ui";
@@ -95,6 +95,19 @@ export function ParticipantForm({
   const [result, setResult] = useState<Success | null>(null);
   const [resendMsg, setResendMsg] = useState<string | null>(null);
   const onToken = useCallback((t: string | null) => setToken(t), []);
+  // Each phase swaps the whole card; move focus to its heading so keyboard and screen-reader users land on the new step.
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const firstRender = useRef(true);
+  useEffect(() => {
+    if (firstRender.current) {
+      firstRender.current = false;
+      return;
+    }
+    if (phase === "fill") document.getElementById("f-name")?.focus({ preventScroll: true });
+    else headingRef.current?.focus({ preventScroll: true });
+  }, [phase]);
+  // Inline validation: an error clears as soon as the participant edits that field.
+  const clearError = (key: string) => setErrors((e) => (e[key] ? { ...e, [key]: "" } : e));
 
   const review = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +122,8 @@ export function ParticipantForm({
     }
     setName(v.value.name);
     setPhase("confirm");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduce ? "auto" : "smooth" });
   };
 
   const submit = async () => {
@@ -192,7 +206,7 @@ export function ParticipantForm({
             <Seal className="stamp-in mx-auto size-24 drop-shadow-[0_8px_14px_oklch(0.48_0.16_32/0.35)]" label="✓" />
           </div>
         )}
-        <h2 className="mt-6 text-3xl font-semibold">{result.pending ? "Data tersimpan" : "Sertifikat siap!"}</h2>
+        <h2 ref={headingRef} tabIndex={-1} className="mt-6 text-3xl font-semibold outline-none">{result.pending ? "Data tersimpan" : "Sertifikat siap!"}</h2>
         <p className="num mt-2 text-sm text-muted">No. {result.number}</p>
         {result.pending ? (
           <>
@@ -208,7 +222,7 @@ export function ParticipantForm({
           <>
             <a
               href={result.downloadUrl}
-              className="mt-7 flex h-13 w-full items-center justify-center gap-2 rounded-lg bg-seal text-base font-semibold text-white shadow-[0_1px_0_0_oklch(1_0_0/0.2)_inset,0_8px_20px_-8px_oklch(0.48_0.16_32/0.6)] transition-colors hover:bg-seal-ink"
+              className="mt-7 flex h-13 w-full items-center justify-center gap-2 rounded-lg bg-seal text-base font-semibold text-white shadow-[0_1px_0_0_oklch(1_0_0/0.2)_inset,0_8px_20px_-8px_oklch(0.48_0.16_32/0.6)] transition-[background-color,transform] duration-150 hover:bg-seal-ink active:scale-[0.98]"
             >
               <Download className="size-5" /> Unduh sertifikat (PDF)
             </a>
@@ -224,7 +238,11 @@ export function ParticipantForm({
             )}
           </>
         )}
-        {message && <p className="mt-3 text-sm font-medium text-seal-ink">{message}</p>}
+        {message && (
+          <p role="alert" className="mt-3 text-sm font-medium text-seal-ink">
+            {message}
+          </p>
+        )}
         <a href={result.verifyUrl} className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-ink-2 hover:text-ink">
           <ShieldCheck className="size-4" aria-hidden /> Lihat halaman verifikasi
         </a>
@@ -235,13 +253,15 @@ export function ParticipantForm({
   if (phase === "duplicate") {
     return (
       <div className="rise">
-        <h2 className="text-2xl font-semibold">Email ini sudah terdaftar</h2>
+        <h2 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold outline-none">
+          Email ini sudah terdaftar
+        </h2>
         <p className="mt-2 text-ink-2">
           <b className="break-all">{email}</b> sudah menerima sertifikat untuk {eventTitle}. Setiap email hanya mendapat satu sertifikat.
         </p>
         <Turnstile onToken={onToken} resetKey={resetKey} />
         {resendMsg ? (
-          <Notice tone="ok" className="mt-5">
+          <Notice tone="ok" className="mt-5" announce>
             {resendMsg}
           </Notice>
         ) : (
@@ -267,7 +287,9 @@ export function ParticipantForm({
     return (
       <div className="rise">
         <p className="eyebrow">Konfirmasi nama</p>
-        <h2 className="mt-2 text-2xl font-semibold">Pastikan nama sudah benar</h2>
+        <h2 ref={headingRef} tabIndex={-1} className="mt-2 text-2xl font-semibold outline-none">
+          Pastikan nama sudah benar
+        </h2>
         <p className="mt-1 text-sm text-ink-2">Nama tidak bisa diubah setelah dikirim. Beginilah sertifikatmu akan tercetak:</p>
         {preview ? (
           <CertificatePreview preview={preview} values={{ ...preview.values, ...answers, nama: name }} />
@@ -285,21 +307,21 @@ export function ParticipantForm({
         )}
         <dl className="mt-5 grid gap-2 text-sm">
           <div className="flex justify-between gap-4">
-            <dt className="text-muted">Email</dt>
-            <dd className="truncate font-medium">{email}</dd>
+            <dt className="shrink-0 text-muted">Email</dt>
+            <dd className="min-w-0 truncate font-medium">{email}</dd>
           </div>
           {fields
             .filter((f) => answers[f.key])
             .map((f) => (
               <div key={f.key} className="flex justify-between gap-4">
-                <dt className="text-muted">{f.label}</dt>
-                <dd className="truncate font-medium">{answers[f.key]}</dd>
+                <dt className="shrink-0 text-muted">{f.label}</dt>
+                <dd className="min-w-0 truncate font-medium">{answers[f.key]}</dd>
               </div>
             ))}
         </dl>
         <Turnstile onToken={onToken} resetKey={resetKey} />
         {message && (
-          <Notice tone="seal" className="mt-5">
+          <Notice tone="seal" className="mt-5" announce>
             <CircleAlert />
             <span>{message}</span>
           </Notice>
@@ -331,7 +353,10 @@ export function ParticipantForm({
         <Input
           id="f-name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            clearError("name");
+          }}
           onBlur={() => setName((n) => cleanName(n))}
           maxLength={MAX_NAME_LENGTH}
           autoComplete="name"
@@ -352,7 +377,10 @@ export function ParticipantForm({
           type="email"
           inputMode="email"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            clearError("email");
+          }}
           autoComplete="email"
           autoCapitalize="none"
           spellCheck={false}
@@ -376,7 +404,10 @@ export function ParticipantForm({
             <Select
               id={`f-${f.key}`}
               value={answers[f.key] ?? ""}
-              onChange={(e) => setAnswers((a) => ({ ...a, [f.key]: e.target.value }))}
+              onChange={(e) => {
+                setAnswers((a) => ({ ...a, [f.key]: e.target.value }));
+                clearError(f.key);
+              }}
               aria-invalid={!!errors[f.key]}
             >
               <option value="">Pilih…</option>
@@ -392,7 +423,10 @@ export function ParticipantForm({
               type={f.type === "email" ? "email" : "text"}
               inputMode={f.type === "number" ? "decimal" : f.type === "email" ? "email" : undefined}
               value={answers[f.key] ?? ""}
-              onChange={(e) => setAnswers((a) => ({ ...a, [f.key]: e.target.value }))}
+              onChange={(e) => {
+                setAnswers((a) => ({ ...a, [f.key]: e.target.value }));
+                clearError(f.key);
+              }}
               maxLength={200}
               aria-invalid={!!errors[f.key]}
             />
@@ -404,7 +438,10 @@ export function ParticipantForm({
           <Input
             id="f-attendanceCode"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => {
+              setCode(e.target.value);
+              clearError("attendanceCode");
+            }}
             autoComplete="off"
             autoCapitalize="characters"
             spellCheck={false}
@@ -414,7 +451,7 @@ export function ParticipantForm({
         </Field>
       )}
       {message && (
-        <Notice tone="seal">
+        <Notice tone="seal" announce>
           <CircleAlert />
           <span>{message}</span>
         </Notice>

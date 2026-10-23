@@ -76,7 +76,7 @@ export function HeroDemo() {
             maxLength={80}
             placeholder="Siti Rahmawati"
             autoComplete="off"
-            className="h-11 min-w-0 flex-1 rounded-lg border border-line-strong bg-white px-3 text-ink outline-none placeholder:text-muted/60 focus:border-seal focus:ring-3 focus:ring-ring/30"
+            className="h-11 min-w-0 flex-1 rounded-lg border border-line-strong bg-white px-3 text-ink outline-none placeholder:text-muted focus:border-seal focus:ring-3 focus:ring-ring/30"
           />
           <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Desain">
             {PRESETS.map((p) => (

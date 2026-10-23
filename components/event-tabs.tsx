@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -14,8 +15,18 @@ const TABS = [
 
 export function EventTabs({ base }: { base: string }) {
   const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
+  // On narrow screens the strip scrolls; keep the current tab in view so the user can see where they are.
+  useEffect(() => {
+    const nav = navRef.current;
+    const active = nav?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!nav || !active) return;
+    const { left, right } = active.getBoundingClientRect();
+    const box = nav.getBoundingClientRect();
+    if (left < box.left || right > box.right) nav.scrollLeft += right - box.right + 16;
+  }, [pathname]);
   return (
-    <nav className="-mb-px flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Bagian acara">
+    <nav ref={navRef} className="-mb-px flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Bagian acara">
       {TABS.map((t) => {
         const href = base + t.href;
         const active = pathname === href;

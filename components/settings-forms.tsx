@@ -72,7 +72,7 @@ export function GuardsForm({
           aria-invalid={!!e.quota}
         />
       </Field>
-      {state?.message && <Notice tone={state.ok ? "ok" : "seal"}>{state.message}</Notice>}
+      {state?.message && <Notice announce tone={state.ok ? "ok" : "seal"}>{state.message}</Notice>}
       <div>
         <Button type="submit" disabled={pending}>
           {pending ? "Menyimpan…" : "Simpan pengaman"}

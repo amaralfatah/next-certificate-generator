@@ -272,7 +272,7 @@ export function TemplateEditor(props: Props) {
         </div>
 
         {message && (
-          <Notice tone={message.tone} className="mb-3">
+          <Notice announce tone={message.tone} className="mb-3">
             {message.text}
           </Notice>
         )}
@@ -302,7 +302,8 @@ export function TemplateEditor(props: Props) {
                 shapes={props.preset?.shapes}
                 fields={fields}
                 values={displayValues}
-                fit={fit}
+                // Measuring needs the DOM and loaded fonts: skip it during SSR and the first client render (same as the participant preview).
+                fit={fontsTick > 0 ? fit : undefined}
                 className="pointer-events-none absolute inset-0 size-full"
               />
               {guides.v && <div className="pointer-events-none absolute inset-y-0 left-1/2 w-px bg-seal/70" />}
@@ -621,7 +622,7 @@ function DesignChooser({
           </li>
         ))}
       </ul>
-      {error && <p className="mt-3 text-sm font-medium text-seal-ink">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-sm font-medium text-seal-ink">{error}</p>}
       <div className="mt-5 border-t border-line pt-5">
         <BackgroundUpload eventId={eventId} hasBackground={current !== undefined} />
       </div>
@@ -676,7 +677,7 @@ function BackgroundUpload({ eventId, hasBackground, compact }: { eventId: string
         <Button size="sm" variant="ghost" onClick={() => inputRef.current?.click()} disabled={busy}>
           <ImageUp /> {busy ? "Mengunggah…" : hasBackground ? "Ganti gambar" : "Unggah gambar"}
         </Button>
-        {error && <span className="text-sm font-medium text-seal-ink">{error}</span>}
+        {error && <span role="alert" className="text-sm font-medium text-seal-ink">{error}</span>}
       </>
     );
   }
@@ -708,7 +709,7 @@ function BackgroundUpload({ eventId, hasBackground, compact }: { eventId: string
         <Button className="mt-5" onClick={() => inputRef.current?.click()} disabled={busy} variant="seal">
           {busy ? "Mengunggah…" : "Pilih gambar"}
         </Button>
-        {error && <p className="mt-3 text-sm font-medium text-seal-ink">{error}</p>}
+        {error && <p role="alert" className="mt-3 text-sm font-medium text-seal-ink">{error}</p>}
       </div>
     </div>
   );

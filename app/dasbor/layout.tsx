@@ -7,7 +7,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const organizer = await requireOrganizer();
   return (
     <div className="min-h-dvh">
-      <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-line bg-paper/85 backdrop-blur-md [@media(prefers-reduced-transparency:reduce)]:bg-paper [@media(prefers-reduced-transparency:reduce)]:backdrop-blur-none">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           <Link href="/dasbor" aria-label="Dasbor">
             <Wordmark />
@@ -19,7 +19,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <form action="/api/auth/keluar" method="post">
               <button
                 type="submit"
-                className="inline-flex h-8 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-ink-2 hover:bg-paper-2 hover:text-ink"
+                className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium text-ink-2 transition-[background-color,color,transform] duration-150 hover:bg-paper-2 hover:text-ink active:scale-[0.97]"
               >
                 <LogOut className="size-4" aria-hidden /> Keluar
               </button>

@@ -19,15 +19,30 @@ export function ParticipantActions({
   name: string;
 }) {
   // Fixed-position menu so the table's horizontal scroll container can't clip it.
-  const [open, setOpen] = useState<{ top: number; right: number } | null>(null);
+  const [open, setOpen] = useState<{ top?: number; bottom?: number; right: number } | null>(null);
   const [pending, start] = useTransition();
   const [toast, setToast] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
+    menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not(:disabled)')?.focus();
     const close = (e: PointerEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === "Escape" : !ref.current?.contains(e.target as Node)) setOpen(null);
+      if (e instanceof KeyboardEvent) {
+        if (e.key === "Escape") {
+          setOpen(null);
+          triggerRef.current?.focus();
+        } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          // Arrow keys move between items, as expected inside role="menu".
+          const items = [...(menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]:not(:disabled)') ?? [])];
+          if (!items.length) return;
+          e.preventDefault();
+          const i = items.indexOf(document.activeElement as HTMLElement);
+          items[(i + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length].focus();
+        }
+      } else if (!ref.current?.contains(e.target as Node)) setOpen(null);
     };
     const dismiss = () => setOpen(null);
     document.addEventListener("pointerdown", close);
@@ -57,28 +72,41 @@ export function ParticipantActions({
     });
   };
 
-  const item = "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-paper-2 disabled:opacity-40 [&_svg]:size-4 [&_svg]:text-muted";
+  const item =
+    "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-sm hover:bg-paper-2 focus-visible:bg-paper-2 focus-visible:outline-offset-0 active:bg-paper-2 disabled:opacity-40 [&_svg]:size-4 [&_svg]:text-muted";
 
   return (
     <div ref={ref} className="relative flex justify-end">
       <button
+        ref={triggerRef}
         type="button"
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
-          setOpen((o) => (o ? null : { top: r.bottom + 4, right: window.innerWidth - r.right }));
+          const right = window.innerWidth - r.right;
+          // Open upward for rows near the bottom of the viewport so the menu is never off-screen.
+          const flipUp = window.innerHeight - r.bottom < 240 && r.top > 240;
+          setOpen((o) => (o ? null : flipUp ? { bottom: window.innerHeight - r.top + 4, right } : { top: r.bottom + 4, right }));
         }}
         aria-haspopup="menu"
         aria-expanded={!!open}
         aria-label={`Aksi untuk ${name}`}
-        className={cn("grid size-8 place-items-center rounded-md text-ink-2 hover:bg-paper-2", pending && "animate-pulse")}
+        className={cn(
+          "grid size-9 place-items-center rounded-md text-ink-2 transition-[background-color,transform] duration-150 hover:bg-paper-2 active:scale-[0.94] aria-expanded:bg-paper-2",
+          pending && "motion-safe:animate-pulse",
+        )}
       >
         <MoreHorizontal className="size-4" />
       </button>
       {open && (
         <div
+          ref={menuRef}
           role="menu"
-          style={{ top: open.top, right: open.right }}
-          className="fixed z-40 w-52 origin-top-right rounded-lg border border-line bg-card p-1 shadow-[0_12px_32px_-8px_oklch(0.27_0.04_255/0.3)] rise [animation-duration:160ms]"
+          aria-label={`Aksi untuk ${name}`}
+          style={{ top: open.top, bottom: open.bottom, right: open.right }}
+          className={cn(
+            "fixed z-40 w-52 rounded-lg border border-line bg-card p-1 shadow-[0_12px_32px_-8px_oklch(0.27_0.04_255/0.3)] rise [animation-duration:160ms]",
+            open.bottom !== undefined ? "origin-bottom-right" : "origin-top-right",
+          )}
         >
           {downloadUrl ? (
             <a role="menuitem" href={downloadUrl} className={item}>

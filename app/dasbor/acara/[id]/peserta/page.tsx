@@ -40,7 +40,7 @@ export default async function ParticipantsPage({ params, searchParams }: PagePro
         </ButtonLink>
       </div>
 
-      <p className="mt-4 text-sm text-muted">
+      <p className="mt-4 text-sm text-muted" aria-live="polite">
         {q ? `${formatNumber(total)} hasil untuk "${q}"` : `${formatNumber(total)} peserta`}
       </p>
 
@@ -50,7 +50,8 @@ export default async function ParticipantsPage({ params, searchParams }: PagePro
             {q ? "Tidak ada peserta yang cocok." : "Belum ada peserta. Bagikan link form untuk mulai menerima pendaftaran."}
           </p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
+            {/* relative: contains the sr-only header text, which otherwise escapes the scroller and widens the page on mobile */}
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-line bg-paper-2/70 text-left text-xs tracking-wide text-muted uppercase">
@@ -72,7 +73,7 @@ export default async function ParticipantsPage({ params, searchParams }: PagePro
                       <p className="truncate text-xs text-muted">{sub.email}</p>
                     </td>
                     <td className="px-4 py-3">
-                      <Link href={`/v/${encodeURIComponent(cert.number)}`} target="_blank" className="num text-xs text-ink-2 hover:text-seal-ink hover:underline">
+                      <Link href={`/v/${encodeURIComponent(cert.number)}`} target="_blank" className="num text-xs whitespace-nowrap text-ink-2 hover:text-seal-ink hover:underline">
                         {cert.number}
                       </Link>
                     </td>
@@ -116,10 +117,10 @@ export default async function ParticipantsPage({ params, searchParams }: PagePro
             Halaman <span className="num">{page}</span> dari <span className="num">{pages}</span>
           </span>
           <div className="flex gap-2">
-            <ButtonLink href={href(page - 1)} variant="outline" size="sm" aria-disabled={page <= 1} className={page <= 1 ? "pointer-events-none opacity-40" : ""}>
+            <ButtonLink href={href(page - 1)} variant="outline" size="sm" aria-disabled={page <= 1} tabIndex={page <= 1 ? -1 : undefined} className={page <= 1 ? "pointer-events-none opacity-40" : ""}>
               <ChevronLeft /> Sebelumnya
             </ButtonLink>
-            <ButtonLink href={href(page + 1)} variant="outline" size="sm" aria-disabled={page >= pages} className={page >= pages ? "pointer-events-none opacity-40" : ""}>
+            <ButtonLink href={href(page + 1)} variant="outline" size="sm" aria-disabled={page >= pages} tabIndex={page >= pages ? -1 : undefined} className={page >= pages ? "pointer-events-none opacity-40" : ""}>
               Berikutnya <ChevronRight />
             </ButtonLink>
           </div>

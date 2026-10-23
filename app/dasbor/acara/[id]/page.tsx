@@ -46,14 +46,17 @@ export default async function EventOverviewPage({ params }: PageProps<"/dasbor/a
                   >
                     {s.done ? <Check className="size-3.5" strokeWidth={3} /> : <span className="num text-[0.7rem]">{i + 1}</span>}
                   </span>
-                  <span className={cn("text-sm", s.done ? "text-ink-2" : "font-medium text-ink")}>{s.label}</span>
+                  <span className={cn("text-sm", s.done ? "text-ink-2" : "font-medium text-ink")}>
+                    {s.label}
+                    {s.done && <span className="sr-only"> (selesai)</span>}
+                  </span>
                   {s.optional && !s.done && <span className="text-xs text-muted">opsional</span>}
                 </>
               );
               return (
                 <li key={s.label}>
                   {s.href ? (
-                    <Link href={s.href} className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-paper-2">
+                    <Link href={s.href} className="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors hover:bg-paper-2 active:bg-paper-2">
                       {content}
                     </Link>
                   ) : (

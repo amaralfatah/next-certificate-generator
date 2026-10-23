@@ -102,7 +102,7 @@ export function EventDetailsForm({
         />
       </Field>
 
-      {state?.message && <Notice tone={state.ok ? "ok" : "seal"}>{state.message}</Notice>}
+      {state?.message && <Notice announce tone={state.ok ? "ok" : "seal"}>{state.message}</Notice>}
 
       <div>
         <Button type="submit" disabled={pending} variant="primary">

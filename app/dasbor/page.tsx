@@ -83,6 +83,7 @@ export default async function DashboardPage() {
                     <span className="inline-flex items-center gap-1.5" title="Sertifikat terbit">
                       <Users className="size-4 text-muted" aria-hidden />
                       <span className="num">{formatNumber(issued)}</span>
+                      <span className="sr-only">sertifikat terbit</span>
                     </span>
                   </div>
                 </div>

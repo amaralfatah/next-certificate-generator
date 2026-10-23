@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cloneElement, isValidElement } from "react";
 import { cn } from "@/lib/utils";
 
 type Variant = "primary" | "seal" | "outline" | "ghost" | "danger";
@@ -46,7 +47,7 @@ export function ButtonLink({
 }
 
 const fieldBase =
-  "w-full rounded-lg border border-line-strong bg-card px-3 text-ink placeholder:text-muted/70 transition-[border-color,box-shadow] outline-none focus:border-seal focus:ring-3 focus:ring-ring/30 aria-invalid:border-seal aria-invalid:ring-3 aria-invalid:ring-seal/15 disabled:opacity-60";
+  "w-full rounded-lg border border-line-strong bg-card px-3 text-ink placeholder:text-muted placeholder:normal-case transition-[border-color,box-shadow] outline-none focus:border-seal focus:ring-3 focus:ring-ring/30 aria-invalid:border-seal aria-invalid:ring-3 aria-invalid:ring-seal/15 read-only:bg-paper-2 read-only:text-ink-2 disabled:opacity-60";
 
 export function Input({ className, ...props }: React.ComponentProps<"input">) {
   return <input className={cn(fieldBase, "h-11 md:h-10", className)} {...props} />;
@@ -89,16 +90,24 @@ export function Field({
   children: React.ReactNode;
   className?: string;
 }) {
+  // Tie the hint/error to the control so screen readers read it with the label.
+  const describedBy = htmlFor && (error || hint) ? `${htmlFor}-desc` : undefined;
+  const control =
+    describedBy && isValidElement<{ "aria-describedby"?: string }>(children)
+      ? cloneElement(children, { "aria-describedby": describedBy })
+      : children;
   return (
     <div className={className}>
       <Label htmlFor={htmlFor}>{label}</Label>
-      {children}
+      {control}
       {error ? (
-        <p className="mt-1.5 text-[0.8rem] font-medium text-seal-ink" role="alert">
+        <p id={describedBy} className="mt-1.5 text-[0.8rem] font-medium text-seal-ink" role="alert">
           {error}
         </p>
       ) : hint ? (
-        <p className="mt-1.5 text-[0.8rem] text-muted">{hint}</p>
+        <p id={describedBy} className="mt-1.5 text-[0.8rem] text-muted">
+          {hint}
+        </p>
       ) : null}
     </div>
   );
@@ -132,9 +141,14 @@ export function Card({ className, ...props }: React.ComponentProps<"section">) {
 
 export function Notice({
   tone = "neutral",
+  announce,
   className,
   ...props
-}: React.ComponentProps<"div"> & { tone?: "neutral" | "warn" | "seal" | "ok" }) {
+}: React.ComponentProps<"div"> & {
+  tone?: "neutral" | "warn" | "seal" | "ok";
+  /** Set on notices that appear in response to an action so assistive tech reads them out. */
+  announce?: boolean;
+}) {
   const tones = {
     neutral: "border-line bg-paper-2 text-ink-2",
     warn: "border-warn/25 bg-warn-wash text-warn",
@@ -143,6 +157,7 @@ export function Notice({
   };
   return (
     <div
+      role={announce ? (tone === "seal" || tone === "warn" ? "alert" : "status") : undefined}
       className={cn("flex gap-3 rounded-lg border px-3.5 py-3 text-sm [&>svg]:mt-0.5 [&>svg]:size-4 [&>svg]:shrink-0", tones[tone], className)}
       {...props}
     />

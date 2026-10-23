@@ -121,10 +121,10 @@ export function FormBuilder({
                   />
                   Wajib
                 </label>
-                <Button variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Naikkan">
+                <Button variant="ghost" size="sm" onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Naikkan ${r.label || "kolom"}`}>
                   <ArrowUp />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label="Turunkan">
+                <Button variant="ghost" size="sm" onClick={() => move(i, 1)} disabled={i === rows.length - 1} aria-label={`Turunkan ${r.label || "kolom"}`}>
                   <ArrowDown />
                 </Button>
                 <Button
@@ -134,7 +134,7 @@ export function FormBuilder({
                     setRows((rs) => rs.filter((x) => x.uid !== r.uid));
                     setDirty(true);
                   }}
-                  aria-label="Hapus kolom"
+                  aria-label={`Hapus ${r.label || "kolom"}`}
                 >
                   <Trash2 />
                 </Button>
@@ -173,7 +173,7 @@ export function FormBuilder({
           </Button>
         </div>
       )}
-      {message && <Notice tone={message.tone}>{message.text}</Notice>}
+      {message && <Notice announce tone={message.tone}>{message.text}</Notice>}
       <p className="text-xs text-muted">
         Kolom tambahan bisa dicetak di sertifikat: buka tab Template, lalu tambahkan dari daftar Kolom.
       </p>

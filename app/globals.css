@@ -82,6 +82,13 @@
     letter-spacing: -0.015em;
     text-wrap: balance;
   }
+  /* Tracking is size-specific: the big display h1 tightens a little more, small h3s relax toward 0. */
+  h1 {
+    letter-spacing: -0.022em;
+  }
+  h3 {
+    letter-spacing: -0.008em;
+  }
   input,
   select,
   textarea {
@@ -155,9 +162,19 @@
   }
 }
 
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Reduced motion keeps the arrival cue as a short cross-fade instead of movement or scale. */
 @media (prefers-reduced-motion: reduce) {
-  .rise,
+  .rise {
+    animation: fade 200ms ease-out both;
+  }
   .stamp-in {
-    animation: none;
+    animation: fade 200ms ease-out both;
+    transform: rotate(-8deg);
   }
 }

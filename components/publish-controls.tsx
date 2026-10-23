@@ -38,7 +38,7 @@ export function PublishControls({ eventId, status, blockers }: { eventId: string
           </>
         )}
       </div>
-      {message && <Notice tone="seal">{message}</Notice>}
+      {message && <Notice announce tone="seal">{message}</Notice>}
     </div>
   );
 }
