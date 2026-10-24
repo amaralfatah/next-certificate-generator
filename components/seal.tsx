@@ -13,16 +13,28 @@ export function Seal({ className, label = "✓" }: { className?: string; label?:
       <polygon points={rim} fill="currentColor" />
       <circle cx="50" cy="50" r="36" fill="none" stroke="rgb(255 255 255 / 0.35)" strokeWidth="1.2" />
       <circle cx="50" cy="50" r="32" fill="none" stroke="rgb(255 255 255 / 0.22)" strokeWidth="0.8" strokeDasharray="1.4 2.2" />
-      <text
-        x="50"
-        y="51"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fill="rgb(255 255 255 / 0.95)"
-        style={{ font: "700 34px var(--font-body), ui-sans-serif, system-ui, sans-serif" }}
-      >
-        {label}
-      </text>
+      {label === "✓" || label === "×" ? (
+        // Drawn, not typeset: "✓" and "×" fall back to a different system font per device (Android clips them).
+        <path
+          d={label === "✓" ? "M35 51.5L45.5 62L66 38" : "M38 38L62 62M62 38L38 62"}
+          fill="none"
+          stroke="rgb(255 255 255 / 0.95)"
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ) : (
+        <text
+          x="50"
+          y="51"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fill="rgb(255 255 255 / 0.95)"
+          style={{ font: "700 34px var(--font-body), ui-sans-serif, system-ui, sans-serif" }}
+        >
+          {label}
+        </text>
+      )}
     </svg>
   );
 }
