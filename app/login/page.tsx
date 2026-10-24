@@ -14,6 +14,7 @@ const ERRORS: Record<string, string> = {
   google: "Login Google gagal. Silakan coba lagi.",
   email: "Akun Google ini belum memiliki email terverifikasi.",
   config: "Login Google belum dikonfigurasi di server.",
+  server: "Server gagal menyelesaikan login. Periksa log dan variabel lingkungan (AUTH_SECRET, DATABASE_URL).",
 };
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
