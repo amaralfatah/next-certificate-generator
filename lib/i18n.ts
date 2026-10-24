@@ -3,12 +3,30 @@
 export const LOCALE = "id-ID";
 export const TIME_ZONE = "Asia/Jakarta";
 
-/** `2026-10-09` -> `9 Oktober 2026` (calendar date, no time zone shift). */
-export function formatEventDate(isoDate: string) {
+const utcDate = (isoDate: string) => {
   const [y, m, d] = isoDate.split("-").map(Number);
-  return new Intl.DateTimeFormat(LOCALE, { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(
-    new Date(Date.UTC(y, m - 1, d)),
-  );
+  return new Date(Date.UTC(y, m - 1, d));
+};
+const fmt = (opts: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat(LOCALE, { ...opts, timeZone: "UTC" });
+
+/**
+ * `2026-10-09` -> `9 Oktober 2026` (calendar date, no time zone shift). With an end date it
+ * becomes a range that repeats only what differs: `24–26 Oktober 2026`,
+ * `30 Oktober – 2 November 2026`, `30 Desember 2026 – 2 Januari 2027`.
+ */
+export function formatEventDate(isoDate: string, endIsoDate?: string | null) {
+  const start = utcDate(isoDate);
+  const full = fmt({ day: "numeric", month: "long", year: "numeric" });
+  if (!endIsoDate || endIsoDate <= isoDate) return full.format(start);
+  const end = utcDate(endIsoDate);
+  if (start.getUTCFullYear() !== end.getUTCFullYear()) return `${full.format(start)} – ${full.format(end)}`;
+  if (start.getUTCMonth() !== end.getUTCMonth()) return `${fmt({ day: "numeric", month: "long" }).format(start)} – ${full.format(end)}`;
+  return `${start.getUTCDate()}–${full.format(end)}`;
+}
+
+/** A moment as a WIB calendar date: `25 Oktober 2026`. */
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat(LOCALE, { dateStyle: "long", timeZone: TIME_ZONE }).format(date);
 }
 
 export function formatDateTime(date: Date) {
@@ -31,4 +49,9 @@ export function fromLocalInput(value: string | null | undefined) {
 
 export function formatNumber(n: number) {
   return new Intl.NumberFormat(LOCALE).format(n);
+}
+
+/** Today's calendar date in WIB, as yyyy-mm-dd. */
+export function todayInJakarta(now = new Date()) {
+  return toLocalInput(now).slice(0, 10);
 }

@@ -1,11 +1,11 @@
 import { Badge } from "@/components/ui";
 import type { Availability } from "@/lib/forms";
 
-const MAP: Record<Availability, { tone: "neutral" | "ok" | "warn" | "seal"; label: string }> = {
+const MAP: Record<Availability, { tone: "neutral" | "ok" | "warn" | "danger"; label: string }> = {
   draft: { tone: "neutral", label: "Draf" },
-  open: { tone: "ok", label: "Dibuka" },
+  open: { tone: "ok", label: "Menerima respons" },
   not_yet: { tone: "warn", label: "Terjadwal" },
-  closed: { tone: "seal", label: "Ditutup" },
+  closed: { tone: "danger", label: "Ditutup" },
   full: { tone: "warn", label: "Kuota penuh" },
 };
 

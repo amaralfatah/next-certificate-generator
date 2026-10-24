@@ -4,8 +4,7 @@
 
 @theme inline {
   --font-sans: var(--font-body);
-  --font-display: var(--font-display-face);
-  --font-mono: var(--font-mono-face);
+  --font-display: var(--font-body);
 
   --color-paper: var(--paper);
   --color-paper-2: var(--paper-2);
@@ -18,38 +17,79 @@
   --color-seal: var(--seal);
   --color-seal-ink: var(--seal-ink);
   --color-seal-wash: var(--seal-wash);
-  --color-gold: var(--gold);
+  --color-faint: var(--faint);
+  --color-night: var(--night);
+  --color-danger: var(--danger);
+  --color-danger-wash: var(--danger-wash);
   --color-ok: var(--ok);
   --color-ok-wash: var(--ok-wash);
   --color-warn: var(--warn);
   --color-warn-wash: var(--warn-wash);
   --color-ring: var(--ring);
+
+  /* Notion elevation: many near-transparent layers, never a hard cast. */
+  --shadow-soft: 0 0.175px 1.041px rgb(0 0 0 / 0.01), 0 0.8px 2.925px rgb(0 0 0 / 0.02), 0 2.025px 7.847px rgb(0 0 0 / 0.027), 0 4px 18px rgb(0 0 0 / 0.04);
+  --shadow-lift: 0 0.175px 1.041px rgb(0 0 0 / 0.01), 0 0.8px 2.925px rgb(0 0 0 / 0.02), 0 2.025px 7.847px rgb(0 0 0 / 0.027), 0 4px 18px rgb(0 0 0 / 0.04), 0 23px 52px rgb(0 0 0 / 0.05);
 }
 
 /*
- * Piagam: an archive of official papers. Ivory stock, navy ink, a vermilion wax seal
- * as the single accent, and thin gold rules. --seal is for fills and marks; --seal-ink
- * is the darker red that passes AA as text on paper.
+ * Sararia Certificates follows DESIGN.md (Notion): a warm paper canvas, white cards on hairlines,
+ * near-black Inter type and one blue accent. --seal is that blue (a stamp in blue ink)
+ * for actions, links, focus and the seal mark; --seal-ink is its darker text/press shade.
+ * --danger is the only red, for errors and destructive actions. --night is the single
+ * indigo band on the landing page.
  */
 :root {
-  --paper: oklch(0.975 0.012 85);
-  --paper-2: oklch(0.952 0.017 82);
-  --card: oklch(0.992 0.006 85);
-  --ink: oklch(0.27 0.04 255);
-  --ink-2: oklch(0.38 0.035 255);
-  --muted: oklch(0.5 0.025 70);
-  --line: oklch(0.88 0.02 80);
-  --line-strong: oklch(0.8 0.025 78);
-  --seal: oklch(0.55 0.17 32);
-  --seal-ink: oklch(0.48 0.16 32);
-  --seal-wash: oklch(0.94 0.035 40);
-  --gold: oklch(0.72 0.1 80);
-  --ok: oklch(0.45 0.1 155);
-  --ok-wash: oklch(0.94 0.04 155);
-  --warn: oklch(0.5 0.12 70);
-  --warn-wash: oklch(0.95 0.05 85);
-  --ring: oklch(0.55 0.17 32 / 0.45);
+  --paper: #f6f5f4;
+  --paper-2: #efeeec;
+  --card: #ffffff;
+  --ink: #111111;
+  --ink-2: #31302e;
+  --muted: #615d59;
+  --faint: #a39e98;
+  --line: #e6e6e6;
+  --line-strong: #dddddd;
+  --seal: #0075de;
+  --seal-ink: #005bab;
+  --seal-wash: #eaf4fd;
+  --night: #213183;
+  --danger: #b42318;
+  --danger-wash: #fdf0ef;
+  --ok: #1e7a3c;
+  --ok-wash: #ebf6ee;
+  --warn: #9a4a00;
+  --warn-wash: #fdf3e7;
+  --ring: rgb(0 117 222 / 0.45);
   color-scheme: light;
+}
+
+/*
+ * Dark theme: the same warm-neutral ramp turned over. Surfaces step up in lightness (paper < card), --seal stays
+ * the button blue so white label text keeps its contrast, and --seal-ink becomes the light blue used for text and links.
+ * The .dark class is set on <html> by the inline script in app/layout.tsx before first paint.
+ */
+.dark {
+  --paper: #191919;
+  --paper-2: #202020;
+  --card: #252525;
+  --ink: #f3f2f0;
+  --ink-2: #d6d3cf;
+  --muted: #a8a39d;
+  --faint: #78736e;
+  --line: #333333;
+  --line-strong: #454545;
+  --seal: #0075de;
+  --seal-ink: #62aeef;
+  --seal-wash: #12263b;
+  --night: #1a2457;
+  --danger: #f2796e;
+  --danger-wash: #3a1f1d;
+  --ok: #4cc26e;
+  --ok-wash: #162a1d;
+  --warn: #e8a257;
+  --warn-wash: #33250f;
+  --ring: rgb(98 174 239 / 0.55);
+  color-scheme: dark;
 }
 
 @layer base {
@@ -64,11 +104,14 @@
   body {
     background: var(--paper);
     color: var(--ink);
-    font-feature-settings: "ss01";
+    font-feature-settings: "lnum", "locl";
     min-height: 100dvh;
   }
   ::selection {
     background: color-mix(in oklch, var(--seal) 22%, transparent);
+  }
+  ::placeholder {
+    color: var(--faint);
   }
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -77,17 +120,21 @@
   h1,
   h2,
   h3 {
-    font-family: var(--font-display-face), Georgia, serif;
-    font-variation-settings: "opsz" 96, "SOFT" 30;
-    letter-spacing: -0.015em;
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
     text-wrap: balance;
   }
-  /* Tracking is size-specific: the big display h1 tightens a little more, small h3s relax toward 0. */
+  /* Notion tracking tightens with size: about -0.033em at display, -0.024em at h2, -0.011em at h3. */
   h1 {
-    letter-spacing: -0.022em;
+    letter-spacing: -0.033em;
+  }
+  h2 {
+    letter-spacing: -0.024em;
   }
   h3 {
-    letter-spacing: -0.008em;
+    letter-spacing: -0.011em;
+  }
+  p {
+    text-wrap: pretty; /* avoid one-word last lines */
   }
   input,
   select,
@@ -104,32 +151,25 @@
 }
 
 @layer components {
-  /* Faint laid-paper texture (horizontal chain lines + grain), inline so no request. */
-  .laid {
-    background-image:
-      repeating-linear-gradient(0deg, transparent 0 5px, color-mix(in oklch, var(--ink) 2.5%, transparent) 5px 6px),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  }
-
-  /* Double rule frame, like the border of a printed certificate. */
+  /* A paper sheet: white on a hairline with the soft lift, the way Notion floats a card off the canvas. */
   .frame {
     position: relative;
-    border: 1px solid var(--line-strong);
-    box-shadow:
-      inset 0 0 0 4px var(--card),
-      inset 0 0 0 5px color-mix(in oklch, var(--gold) 55%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    box-shadow: var(--shadow-soft);
   }
 
   .eyebrow {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1.33;
     color: var(--seal-ink);
   }
 
   .num {
-    font-family: var(--font-mono-face), ui-monospace, monospace;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: 0.02em;
+    font-variant-numeric: tabular-nums lining-nums;
+    letter-spacing: 0.01em;
   }
 
   .rise {
@@ -168,8 +208,38 @@
   }
 }
 
+/* Reduced transparency: translucent chrome becomes solid instead of relying on blur for legibility. */
+@media (prefers-reduced-transparency: reduce) {
+  [class*="backdrop-blur"] {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .bg-card\/90 {
+    background-color: var(--card);
+  }
+}
+
+/* More contrast: firmer rules and borders so surfaces stay distinct without relying on soft tints. */
+@media (prefers-contrast: more) {
+  :root:not(.dark) {
+    --line: #b5b2ae;
+    --line-strong: #8a8682;
+    --muted: #45423f;
+    --faint: #615d59;
+  }
+}
+
 /* Reduced motion keeps the arrival cue as a short cross-fade instead of movement or scale. */
 @media (prefers-reduced-motion: reduce) {
+  /* Press, lift and rotate cues drop their movement; colour and opacity changes stay. */
+  *,
+  *::before,
+  *::after {
+    transition-property: color, background-color, border-color, opacity, box-shadow !important;
+  }
+  :active {
+    transform: none !important;
+  }
   .rise {
     animation: fade 200ms ease-out both;
   }

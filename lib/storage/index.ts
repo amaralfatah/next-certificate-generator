@@ -1,12 +1,14 @@
 import "server-only";
 import { AwsClient } from "aws4fetch";
+import https from "node:https";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { env } from "@/lib/env";
 import { signToken } from "@/lib/security/crypto";
 
 /**
- * Private object storage. Cloudflare R2 (S3 API) when R2_* is configured, otherwise
+ * Private object storage. Neon Object Storage when AWS_* is configured, else Cloudflare R2 (S3 API)
+ * when R2_* is configured, otherwise
  * files under .data/files served by /api/files with HMAC-signed URLs. Both hand out
  * short-lived signed URLs; nothing is public.
  */
@@ -18,18 +20,16 @@ export interface Storage {
   signedPutUrl(key: string, contentType: string, ttlSeconds: number): Promise<string>;
 }
 
-class R2Storage implements Storage {
+/** Any S3-compatible bucket addressed path-style: Neon Object Storage or Cloudflare R2. */
+class S3Storage implements Storage {
   private client: AwsClient;
-  private base: string;
 
-  constructor(cfg: NonNullable<typeof env.r2>) {
-    this.client = new AwsClient({
-      accessKeyId: cfg.accessKeyId,
-      secretAccessKey: cfg.secretAccessKey,
-      service: "s3",
-      region: "auto",
-    });
-    this.base = `https://${cfg.accountId}.r2.cloudflarestorage.com/${cfg.bucket}`;
+  constructor(
+    cfg: { accessKeyId: string; secretAccessKey: string; region: string },
+    private base: string,
+    private label: string,
+  ) {
+    this.client = new AwsClient({ ...cfg, service: "s3" });
   }
 
   private url(key: string) {
@@ -37,24 +37,39 @@ class R2Storage implements Storage {
   }
 
   async put(key: string, body: Uint8Array, contentType: string) {
-    const res = await this.client.fetch(this.url(key), {
+    // Next patches the global fetch and sends larger bodies chunked, which Neon rejects
+    // with 501 NotImplemented. A plain https request keeps a fixed Content-Length.
+    const signed = await this.client.sign(this.url(key), {
       method: "PUT",
       body: body as BodyInit,
-      headers: { "content-type": contentType },
+      headers: { "content-type": contentType, "content-length": String(body.length) },
     });
-    if (!res.ok) throw new Error(`R2 put ${key}: ${res.status}`);
+    const { status, text } = await new Promise<{ status: number; text: string }>((resolve, reject) => {
+      const req = https.request(
+        signed.url,
+        { method: "PUT", headers: Object.fromEntries(signed.headers) },
+        (res) => {
+          const chunks: Buffer[] = [];
+          res.on("data", (c: Buffer) => chunks.push(c));
+          res.on("end", () => resolve({ status: res.statusCode ?? 0, text: Buffer.concat(chunks).toString("utf8") }));
+        },
+      );
+      req.on("error", reject);
+      req.end(body);
+    });
+    if (status < 200 || status >= 300) throw new Error(`${this.label} put ${key}: ${status} ${text.slice(0, 200)}`);
   }
 
   async get(key: string) {
     const res = await this.client.fetch(this.url(key));
     if (res.status === 404) return null;
-    if (!res.ok) throw new Error(`R2 get ${key}: ${res.status}`);
+    if (!res.ok) throw new Error(`${this.label} get ${key}: ${res.status}`);
     return new Uint8Array(await res.arrayBuffer());
   }
 
   async delete(key: string) {
     const res = await this.client.fetch(this.url(key), { method: "DELETE" });
-    if (!res.ok && res.status !== 404) throw new Error(`R2 delete ${key}: ${res.status}`);
+    if (!res.ok && res.status !== 404) throw new Error(`${this.label} delete ${key}: ${res.status}`);
   }
 
   private async presign(
@@ -133,6 +148,14 @@ class LocalStorage implements Storage {
 let instance: Storage | undefined;
 
 export function storage(): Storage {
-  instance ??= env.r2 ? new R2Storage(env.r2) : new LocalStorage();
+  instance ??= env.s3
+    ? new S3Storage(env.s3, `${env.s3.endpoint}/${env.s3.bucket}`, "Neon storage")
+    : env.r2
+      ? new S3Storage(
+          { accessKeyId: env.r2.accessKeyId, secretAccessKey: env.r2.secretAccessKey, region: "auto" },
+          `https://${env.r2.accountId}.r2.cloudflarestorage.com/${env.r2.bucket}`,
+          "R2",
+        )
+      : new LocalStorage();
   return instance;
 }

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { applyPreset, confirmBackground, createBackgroundUpload, saveTemplateFields } from "@/app/dasbor/actions";
+import { applyPreset, confirmBackground, createBackgroundUpload, saveTemplateFields } from "@/app/forms/actions";
 import { Button, Input, Label, Notice, Select } from "@/components/ui";
 import { CERT_FONTS, cssFamily, type CertFontId } from "@/lib/fonts";
 import { defaultField, fitFontSize, MAX_NAME_LENGTH, pageFormatName } from "@/lib/pdf/layout";
@@ -55,7 +55,7 @@ export function TemplateEditor(props: Props) {
   const [fields, setFields] = useState<TemplateField[]>(props.initialFields);
   const [selected, setSelected] = useState<string | null>(props.initialFields[0]?.key ?? null);
   const [dirty, setDirty] = useState(false);
-  const [message, setMessage] = useState<{ tone: "ok" | "seal"; text: string } | null>(null);
+  const [message, setMessage] = useState<{ tone: "ok" | "danger"; text: string } | null>(null);
   const [saving, startSave] = useTransition();
   const [longName, setLongName] = useState(false);
   const [guides, setGuides] = useState<{ v: boolean; h: boolean }>({ v: false, h: false });
@@ -156,7 +156,7 @@ export function TemplateEditor(props: Props) {
     new Promise<boolean>((resolve) => {
       startSave(async () => {
         const r = await saveTemplateFields(eventId, fields);
-        setMessage(r?.message ? { tone: r.ok ? "ok" : "seal", text: r.message } : null);
+        setMessage(r?.message ? { tone: r.ok ? "ok" : "danger", text: r.message } : null);
         if (r?.ok) {
           setDirty(false);
           router.refresh();
@@ -171,7 +171,7 @@ export function TemplateEditor(props: Props) {
       win?.close();
       return;
     }
-    const url = `/api/dasbor/acara/${eventId}/pratinjau${longName ? "?panjang=1" : ""}`;
+    const url = `/api/forms/${eventId}/preview${longName ? "?long=1" : ""}`;
     if (win) win.location.assign(url);
     else router.push(url);
   };
@@ -247,12 +247,12 @@ export function TemplateEditor(props: Props) {
   const labelOf = (key: string) => props.available.find((a) => a.key === key)?.label ?? key;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1fr_300px]">
-      <div className="min-w-0">
+    <div className="grid flex-1 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="min-w-0 px-4 py-6 sm:px-8">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             {!locked && (
-              <Button onClick={save} disabled={saving || !dirty} variant={dirty ? "seal" : "outline"} size="sm">
+              <Button onClick={save} disabled={saving || !dirty} variant={dirty ? "primary" : "outline"} size="sm">
                 <Save /> {saving ? "Menyimpan…" : dirty ? "Simpan perubahan" : "Tersimpan"}
               </Button>
             )}
@@ -265,7 +265,7 @@ export function TemplateEditor(props: Props) {
               </Button>
             )}
           </div>
-          <label className="flex cursor-pointer items-center gap-2 text-sm text-ink-2 select-none">
+          <label className="flex cursor-pointer items-center gap-2 py-2 text-sm text-ink-2 select-none">
             <input type="checkbox" checked={longName} onChange={(e) => setLongName(e.target.checked)} className="size-4 accent-[var(--seal)]" />
             Uji nama panjang
           </label>
@@ -279,16 +279,17 @@ export function TemplateEditor(props: Props) {
         {locked && (
           <Notice tone="warn" className="mb-3">
             <Lock />
-            <span>Template terkunci karena sudah ada sertifikat terbit, agar semua sertifikat acara ini seragam. Duplikat acara di Pengaturan untuk memakai template baru.</span>
+            <span>Desain terkunci karena sudah ada respons, agar semua sertifikat formulir ini seragam. Duplikat formulir di Setelan untuk memakai desain lain.</span>
           </Notice>
         )}
 
-        <div className="rounded-xl border border-line bg-paper-2 p-3 sm:p-5">
+        <div>
           {hasDesign ? (
             <div
               ref={stageRef}
-              className="relative w-full overflow-hidden bg-white shadow-[0_20px_50px_-24px_oklch(0.27_0.04_255/0.45)] select-none"
-              style={{ aspectRatio: `${W} / ${H}` }}
+              className="relative mx-auto w-full overflow-hidden bg-white shadow-lift select-none"
+              // As large as the workspace allows while the whole page stays in view below the bar and toolbar.
+              style={{ aspectRatio: `${W} / ${H}`, maxWidth: `calc((100dvh - 15rem) * ${W / H})` }}
               onPointerDown={() => setSelected(null)}
             >
               {props.backgroundUrl && (
@@ -376,15 +377,15 @@ export function TemplateEditor(props: Props) {
             <DesignChooser eventId={eventId} sample={props.sample} current={props.preset?.id} onDone={() => setShowChooser(false)} />
           </div>
         )}
-        <p className="mt-2 text-xs text-muted">
-          Halaman {pageFormatName(W, H)}, <span className="num">{Math.round(W)} × {Math.round(H)} pt</span>. Seret kolom untuk memindahkan, tarik
-          tepinya untuk mengatur lebar. Garis merah muncul saat kolom tepat di tengah. Panah menggeser 1 pt (Shift: 10 pt).
+        <p className="mx-auto mt-3 max-w-2xl text-center text-xs text-muted">
+          Seret kolom untuk memindahkan dan tarik tepinya untuk mengubah lebar. Garis biru muncul saat kolom tepat di tengah. Ukuran
+          halaman: {pageFormatName(W, H)}.
         </p>
       </div>
 
-      <aside className="grid content-start gap-5">
+      <aside className="grid content-start gap-5 border-t border-line bg-card p-5 lg:sticky lg:top-[var(--bar-h)] lg:h-[calc(100dvh-var(--bar-h))] lg:self-start lg:overflow-y-auto lg:border-t-0 lg:border-l">
         <section>
-          <h2 className="text-lg font-semibold">Kolom</h2>
+          <h2 className="text-lg font-bold">Kolom</h2>
           <ul className="mt-3 grid gap-1">
             {props.available.map((a) => {
               const placed = fields.some((f) => f.key === a.key);
@@ -398,13 +399,12 @@ export function TemplateEditor(props: Props) {
                   >
                     <button
                       type="button"
-                      className="flex min-w-0 flex-1 items-center gap-2 text-left disabled:cursor-default"
+                      className="flex min-w-0 flex-1 items-center gap-2 self-stretch text-left disabled:cursor-default"
                       onClick={() => placed && setSelected(a.key)}
                       disabled={!placed}
                     >
                       <span className={cn("size-2 shrink-0 rounded-full", placed ? "bg-ok" : "bg-line-strong")} />
                       <span className={cn("truncate", placed ? "font-medium text-ink" : "text-ink-2")}>{a.label}</span>
-                      <span className="num truncate text-[0.7rem] text-muted">{`{${a.key}}`}</span>
                     </button>
                     {!placed && !locked && hasDesign && (
                       <Button size="sm" variant="ghost" onClick={() => add(a.key)} aria-label={`Tambah ${a.label}`}>
@@ -421,7 +421,7 @@ export function TemplateEditor(props: Props) {
         {sel && (
           <section className="rounded-xl border border-line bg-card p-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">{labelOf(sel.key)}</h2>
+              <h2 className="text-lg font-bold">{labelOf(sel.key)}</h2>
               {!locked && (
                 <Button size="sm" variant="ghost" onClick={() => remove(sel.key)} aria-label="Hapus kolom">
                   <Trash2 />
@@ -442,7 +442,7 @@ export function TemplateEditor(props: Props) {
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
-                    <NumberInput label="Ukuran (pt)" value={sel.size} min={4} max={200} onChange={(v) => update(sel.key, { size: v })} />
+                    <NumberInput label="Ukuran huruf" value={sel.size} min={4} max={200} onChange={(v) => update(sel.key, { size: v })} />
                     <div>
                       <Label htmlFor="f-color">Warna</Label>
                       <div className="flex h-10 items-center gap-2 rounded-lg border border-line-strong bg-card px-2">
@@ -474,7 +474,7 @@ export function TemplateEditor(props: Props) {
                           aria-checked={sel.align === v}
                           aria-label={label}
                           onClick={() => update(sel.key, { align: v })}
-                          className={cn("grid h-8 w-10 place-items-center rounded-md", sel.align === v ? "bg-ink text-paper" : "text-ink-2 hover:bg-paper-2")}
+                          className={cn("grid h-8 w-10 place-items-center rounded-md pointer-coarse:h-10 pointer-coarse:w-12", sel.align === v ? "bg-ink text-paper" : "text-ink-2 hover:bg-paper-2")}
                         >
                           <Icon className="size-4" />
                         </button>
@@ -489,11 +489,15 @@ export function TemplateEditor(props: Props) {
                   <input id="f-color" type="color" value={sel.color} onChange={(e) => update(sel.key, { color: e.target.value })} className="h-10 w-16 cursor-pointer rounded-lg border border-line-strong bg-card p-1" />
                 </div>
               )}
-              <div className="grid grid-cols-3 gap-2">
-                <NumberInput label="X" value={sel.x} onChange={(v) => update(sel.key, { x: clamp(v, 0, W) })} />
-                <NumberInput label="Y" value={sel.y} onChange={(v) => update(sel.key, { y: clamp(v, 0, H) })} />
-                <NumberInput label={sel.key === "qr" ? "Sisi" : "Lebar"} value={sel.w} min={10} onChange={(v) => update(sel.key, { w: clamp(v, 10, W) })} />
-              </div>
+              {/* Dragging covers most layouts; exact numbers stay one click away. Arrow keys nudge by 1 pt (Shift: 10 pt). */}
+              <details className="rounded-lg border border-line px-3 py-2">
+                <summary className="cursor-pointer text-sm font-medium text-ink-2 select-none hover:text-ink">Posisi dan ukuran tepat</summary>
+                <div className="mt-3 grid grid-cols-3 gap-2 pb-1">
+                  <NumberInput label="Kiri" value={sel.x} onChange={(v) => update(sel.key, { x: clamp(v, 0, W) })} />
+                  <NumberInput label="Atas" value={sel.y} onChange={(v) => update(sel.key, { y: clamp(v, 0, H) })} />
+                  <NumberInput label={sel.key === "qr" ? "Sisi" : "Lebar"} value={sel.w} min={10} onChange={(v) => update(sel.key, { w: clamp(v, 10, W) })} />
+                </div>
+              </details>
               {sel.key !== "qr" && (
                 <Button
                   type="button"
@@ -525,7 +529,7 @@ function NumberInput({
   min?: number;
   max?: number;
 }) {
-  const id = `n-${label}`;
+  const id = `n-${label.replace(/\s+/g, "-")}`;
   return (
     <div>
       <Label htmlFor={id} className="text-xs">
@@ -570,7 +574,7 @@ function DesignChooser({
     setError(null);
     start(async () => {
       const r = await applyPreset(eventId, id);
-      if (!r?.ok) setError(r?.message ?? "Gagal memakai template.");
+      if (!r?.ok) setError(r?.message ?? "Gagal memakai desain.");
       else {
         router.refresh();
         onDone?.();
@@ -582,7 +586,7 @@ function DesignChooser({
     <div>
       <h3 className="text-xl font-semibold">{current !== undefined ? "Ganti desain" : "Pilih desain sertifikat"}</h3>
       <p className="mt-1 text-sm text-ink-2">
-        Mulai dari template siap pakai ukuran slide 16:9, atau unggah desainmu sendiri dari Canva/PowerPoint.
+        Mulai dari template siap pakai ukuran slide 16:9, atau unggah desainmu sendiri dari aplikasi desain atau PowerPoint.
       </p>
       <ul className="mt-4 grid gap-3 sm:grid-cols-3">
         {PRESETS.map((p) => (
@@ -596,7 +600,7 @@ function DesignChooser({
                 "group block w-full overflow-hidden rounded-lg border bg-card text-left transition-[border-color,box-shadow,transform] duration-200 active:scale-[0.98] disabled:opacity-60",
                 current === p.id
                   ? "border-seal ring-2 ring-seal/30"
-                  : "border-line hover:border-line-strong hover:shadow-[0_10px_24px_-14px_oklch(0.27_0.04_255/0.45)]",
+                  : "border-line hover:border-line-strong hover:shadow-soft",
               )}
             >
               <CertificateSvg
@@ -622,7 +626,7 @@ function DesignChooser({
           </li>
         ))}
       </ul>
-      {error && <p role="alert" className="mt-3 text-sm font-medium text-seal-ink">{error}</p>}
+      {error && <p role="alert" className="mt-3 text-sm font-medium text-danger">{error}</p>}
       <div className="mt-5 border-t border-line pt-5">
         <BackgroundUpload eventId={eventId} hasBackground={current !== undefined} />
       </div>
@@ -677,7 +681,7 @@ function BackgroundUpload({ eventId, hasBackground, compact }: { eventId: string
         <Button size="sm" variant="ghost" onClick={() => inputRef.current?.click()} disabled={busy}>
           <ImageUp /> {busy ? "Mengunggah…" : hasBackground ? "Ganti gambar" : "Unggah gambar"}
         </Button>
-        {error && <span role="alert" className="text-sm font-medium text-seal-ink">{error}</span>}
+        {error && <span role="alert" className="text-sm font-medium text-danger">{error}</span>}
       </>
     );
   }
@@ -695,7 +699,7 @@ function BackgroundUpload({ eventId, hasBackground, compact }: { eventId: string
         upload(e.dataTransfer.files?.[0]);
       }}
       className={cn(
-        "laid grid w-full place-items-center rounded-lg border-2 border-dashed bg-card px-6 py-8 text-center transition-colors",
+        "grid w-full place-items-center rounded-lg border-2 border-dashed bg-card px-6 py-8 text-center transition-colors",
         drag ? "border-seal bg-seal-wash" : "border-line-strong",
       )}
     >
@@ -704,12 +708,12 @@ function BackgroundUpload({ eventId, hasBackground, compact }: { eventId: string
         <ImageUp className="mx-auto size-10 text-muted" strokeWidth={1.5} />
         <h3 className="mt-4 text-xl font-semibold">Unggah desain sertifikat</h3>
         <p className="mt-2 text-sm text-ink-2">
-          PNG atau JPG, maks 5 MB. Ekspor slide PowerPoint/Canva 16:9 (mis. 1920 × 1080 px) atau A4 (3508 × 2480 px). Kosongkan area nama; Piagam yang akan mengisinya.
+          PNG atau JPG, maks 5 MB. Ekspor slide 16:9 (mis. 1920 × 1080 px) atau A4 (3508 × 2480 px). Kosongkan area nama; Sararia Certificates yang akan mengisinya.
         </p>
-        <Button className="mt-5" onClick={() => inputRef.current?.click()} disabled={busy} variant="seal">
+        <Button className="mt-5" onClick={() => inputRef.current?.click()} disabled={busy}>
           {busy ? "Mengunggah…" : "Pilih gambar"}
         </Button>
-        {error && <p role="alert" className="mt-3 text-sm font-medium text-seal-ink">{error}</p>}
+        {error && <p role="alert" className="mt-3 text-sm font-medium text-danger">{error}</p>}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import { OG_SIZE, ogCard } from "@/lib/og";
 
-export const alt = "Piagam: peserta isi form, sertifikat langsung jadi";
+export const alt = "Sararia Certificates: peserta isi form, sertifikat langsung jadi";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 

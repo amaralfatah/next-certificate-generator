@@ -20,7 +20,7 @@ function measure(text: string, font: string, size: number) {
 const SWATCH: Record<string, string> = { klasik: "#1c2a3a", modern: "#16324f", ceria: "#e8735a" };
 
 /** Landing hero: type a name, watch the real certificate template fill in. No sign-up. */
-export function HeroDemo() {
+export function HeroDemo({ ctaLabel }: { ctaLabel: string }) {
   const [name, setName] = useState("");
   const [presetId, setPresetId] = useState("klasik");
   const preset = PRESETS.find((p) => p.id === presetId)!;
@@ -48,23 +48,23 @@ export function HeroDemo() {
   return (
     <div className="relative mx-auto w-full max-w-[600px]">
       <div className="relative">
-      <div className="absolute -inset-5 rotate-2 rounded-md bg-paper-2 sm:-inset-7" aria-hidden />
-      <div className="relative rotate-[-1deg] overflow-hidden rounded-[3px] bg-white shadow-[0_30px_60px_-20px_oklch(0.27_0.04_255/0.4),0_0_0_1px_oklch(0.27_0.04_255/0.06)] transition-transform duration-300 ease-out motion-safe:hover:rotate-0">
-        <CertificateSvg
-          width={preset.widthPt}
-          height={preset.heightPt}
-          shapes={preset.shapes}
-          fields={preset.fields}
-          values={values}
-          fit={fontsReady ? (text, box) => fitFontSize((s) => measure(text, box.font, s), box.size, box.w) : undefined}
-          className="block aspect-video w-full"
-          title={`Contoh sertifikat untuk ${values.nama}`}
-        />
-      </div>
-      <Seal className="stamp-in pointer-events-none absolute -top-7 -right-4 size-18 drop-shadow-[0_8px_14px_oklch(0.48_0.16_32/0.35)] [animation-delay:600ms] sm:-top-9 sm:-right-7 sm:size-22" label="✓" />
+        <div className="absolute -inset-5 rotate-2 rounded-md bg-paper-2 sm:-inset-7" aria-hidden />
+        <div className="relative rotate-[-1deg] overflow-hidden rounded-[3px] bg-white shadow-lift transition-transform duration-300 ease-out motion-safe:hover:rotate-0">
+          <CertificateSvg
+            width={preset.widthPt}
+            height={preset.heightPt}
+            shapes={preset.shapes}
+            fields={preset.fields}
+            values={values}
+            fit={fontsReady ? (text, box) => fitFontSize((s) => measure(text, box.font, s), box.size, box.w) : undefined}
+            className="block aspect-video w-full"
+            title={`Contoh sertifikat untuk ${values.nama}`}
+          />
+        </div>
+        <Seal className="stamp-in pointer-events-none absolute -top-7 -right-4 size-18 drop-shadow-[0_8px_14px_rgb(0_117_222/0.28)] [animation-delay:600ms] sm:-top-9 sm:-right-7 sm:size-22" label="✓" />
       </div>
 
-      <div className="relative mt-10 rounded-xl border border-line bg-card/90 p-3 shadow-[0_8px_24px_-16px_oklch(0.27_0.04_255/0.35)] backdrop-blur sm:p-4">
+      <div className="relative mt-10 rounded-xl border border-line bg-card p-3 sm:p-4">
         <label htmlFor="demo-name" className="text-sm font-semibold text-ink">
           Coba ketik namamu
         </label>
@@ -74,23 +74,22 @@ export function HeroDemo() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={80}
-            placeholder="Siti Rahmawati"
+            placeholder="Namamu"
             autoComplete="off"
-            className="h-11 min-w-0 flex-1 rounded-lg border border-line-strong bg-white px-3 text-ink outline-none placeholder:text-muted focus:border-seal focus:ring-3 focus:ring-ring/30"
+            className="h-11 min-w-0 flex-1 rounded-sm border border-line-strong bg-card px-3 text-ink outline-none placeholder:text-faint focus:border-seal focus:ring-3 focus:ring-ring/25"
           />
-          <div className="flex items-center gap-1.5" role="radiogroup" aria-label="Desain">
+          <div className="flex items-center gap-1.5" role="group" aria-label="Desain">
             {PRESETS.map((p) => (
               <button
                 key={p.id}
                 type="button"
-                role="radio"
-                aria-checked={presetId === p.id}
+                aria-pressed={presetId === p.id}
                 aria-label={`Desain ${p.name}`}
                 title={p.name}
                 onClick={() => setPresetId(p.id)}
                 className={cn(
                   "grid h-11 flex-1 place-items-center rounded-lg border px-3 text-xs font-semibold transition-[border-color,background-color,transform] duration-150 active:scale-[0.96] sm:flex-none",
-                  presetId === p.id ? "border-ink bg-ink text-paper" : "border-line-strong bg-white text-ink-2 hover:border-ink/40",
+                  presetId === p.id ? "border-seal bg-seal-wash text-seal-ink" : "border-line-strong bg-card text-ink-2 hover:border-ink/40",
                 )}
               >
                 <span className="flex items-center gap-1.5">
@@ -101,6 +100,17 @@ export function HeroDemo() {
             ))}
           </div>
         </div>
+        {/* Posts the typed name and chosen design, so the new form starts from what the visitor just saw. */}
+        <form action="/start" method="post">
+          <input type="hidden" name="design" value={presetId} />
+          <input type="hidden" name="name" value={name.trim()} />
+          <button
+            type="submit"
+            className="mt-3 inline-flex cursor-pointer items-center gap-1.5 py-1 text-sm font-semibold text-seal-ink hover:underline hover:underline-offset-4 pointer-coarse:py-2.5 [&_svg]:size-4"
+          >
+            {ctaLabel}
+          </button>
+        </form>
       </div>
     </div>
   );

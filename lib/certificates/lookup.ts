@@ -15,6 +15,7 @@ export async function findCertificate(number: string) {
       name: submissions.name,
       eventTitle: events.title,
       eventDate: events.date,
+      eventEndDate: events.endDate,
       organizerLabel: events.organizerLabel,
     })
     .from(certificates)

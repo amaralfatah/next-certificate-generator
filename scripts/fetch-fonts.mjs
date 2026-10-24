@@ -17,6 +17,8 @@ const FONTS = [
   ["montserrat", 700],
   ["plus-jakarta-sans", 400],
   ["plus-jakarta-sans", 700],
+  // Not a certificate font: the Sararia product name on the social card (lib/og.tsx).
+  ["inter", 600],
 ];
 
 await mkdir("public/fonts", { recursive: true });

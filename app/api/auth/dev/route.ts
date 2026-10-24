@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { startSession, upsertOrganizer } from "@/lib/auth/session";
+import { pathAfterSignIn } from "@/lib/new-form";
 import { env } from "@/lib/env";
 import { EMAIL_RE } from "@/lib/forms";
 
@@ -7,8 +8,8 @@ import { EMAIL_RE } from "@/lib/forms";
 export async function POST(req: NextRequest) {
   if (!env.devLogin) return new NextResponse("Not found", { status: 404 });
   const email = String((await req.formData()).get("email") ?? "").trim().toLowerCase();
-  if (!EMAIL_RE.test(email)) return NextResponse.redirect(new URL("/masuk", req.url), 303);
+  if (!EMAIL_RE.test(email)) return NextResponse.redirect(new URL("/login", req.url), 303);
   const organizer = await upsertOrganizer(email, "");
   await startSession(organizer.id);
-  return NextResponse.redirect(new URL("/dasbor", req.url), 303);
+  return NextResponse.redirect(new URL(await pathAfterSignIn(organizer), req.url), 303);
 }

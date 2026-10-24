@@ -43,3 +43,13 @@ export async function allParticipants(eventId: string) {
     .where(eq(submissions.eventId, eventId))
     .orderBy(submissions.createdAt);
 }
+
+/** Every response's answers, oldest first, for the per-question summary. */
+export async function allAnswers(eventId: string) {
+  const rows = await (await db())
+    .select({ answers: submissions.answers })
+    .from(submissions)
+    .where(eq(submissions.eventId, eventId))
+    .orderBy(submissions.createdAt);
+  return rows.map((r) => r.answers);
+}

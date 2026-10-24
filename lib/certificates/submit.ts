@@ -1,7 +1,7 @@
 import { and, asc, count, eq, sql } from "drizzle-orm";
 import type { DB } from "@/lib/db/client";
 import { certificates, events, formFields, submissions } from "@/lib/db/schema";
-import { type FieldErrors, formAvailability, validateSubmission } from "@/lib/forms";
+import { type Answers, type FieldErrors, formAvailability, validateSubmission } from "@/lib/forms";
 import { formatCertificateNumber } from "@/lib/pdf/layout";
 import { peek, hit } from "@/lib/security/rate-limit";
 import { verifyCode } from "@/lib/security/crypto";
@@ -10,7 +10,7 @@ export type SubmitInput = {
   slug: string;
   name: string;
   email: string;
-  answers: Record<string, string>;
+  answers: Answers;
   attendanceCode?: string;
   /** Hashed client IP; null disables per-IP limits (tests, unknown IP). */
   ipHash: string | null;
@@ -41,7 +41,7 @@ const UNAVAILABLE: Record<string, string> = {
   draft: "Form ini belum dipublikasikan.",
   not_yet: "Form ini belum dibuka.",
   closed: "Form ini sudah ditutup.",
-  full: "Kuota sertifikat untuk acara ini sudah habis.",
+  full: "Kuota formulir ini sudah penuh.",
 };
 
 class QuotaFull extends Error {}
@@ -80,7 +80,7 @@ export async function submitForm(db: DB, input: SubmitInput, now = new Date()): 
     .orderBy(asc(formFields.position));
   const v = validateSubmission(fields, input);
   if (!v.ok) {
-    return { ok: false, code: "invalid", message: "Periksa kembali isian form.", fieldErrors: v.errors };
+    return { ok: false, code: "invalid", message: "Periksa kembali jawabanmu.", fieldErrors: v.errors };
   }
 
   if (event.attendanceCodeHash) {
@@ -107,7 +107,7 @@ export async function submitForm(db: DB, input: SubmitInput, now = new Date()): 
     ({
       ok: false,
       code: "duplicate",
-      message: "Email ini sudah menerima sertifikat untuk acara ini.",
+      message: "Email ini sudah mengisi formulir ini.",
     }) as const;
 
   const [existing] = await db

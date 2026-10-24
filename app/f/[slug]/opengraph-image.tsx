@@ -12,11 +12,11 @@ export default async function Image({ params }: { params: Promise<{ slug: string
   const { slug } = await params;
   const [event] = await (await db()).select().from(events).where(eq(events.slug, slug));
   if (!event || event.status === "draft") {
-    return ogCard({ eyebrow: "Piagam", title: "Sertifikat otomatis", footer: "piagam" });
+    return ogCard({ eyebrow: "Sararia Certificates", title: "Sertifikat otomatis", footer: "certificates.sararia.com" });
   }
   return ogCard({
-    eyebrow: `Sertifikat · ${event.organizerLabel}`.slice(0, 60),
+    eyebrow: event.organizerLabel.slice(0, 60),
     title: event.title,
-    footer: `${formatEventDate(event.date)} · isi form, unduh sertifikatmu`,
+    footer: `${formatEventDate(event.date, event.endDate)} · isi formulir`,
   });
 }

@@ -15,6 +15,20 @@
       "when": 1791520821195,
       "tag": "0001_template_preset",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792850700316,
+      "tag": "0002_question_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792852633001,
+      "tag": "0003_event_end_date",
+      "breakpoints": true
     }
   ]
 }

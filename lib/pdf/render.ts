@@ -32,8 +32,8 @@ export async function renderCertificate(input: RenderInput): Promise<Uint8Array>
   const doc = await PDFDocument.create();
   doc.registerFontkit(fontkit);
   if (input.title) doc.setTitle(input.title);
-  doc.setCreator("Piagam");
-  doc.setProducer("Piagam");
+  doc.setCreator("Sararia Certificates");
+  doc.setProducer("Sararia Certificates");
 
   const page = doc.addPage([input.widthPt, input.heightPt]);
   const H = input.heightPt;
@@ -95,7 +95,7 @@ export async function renderCertificate(input: RenderInput): Promise<Uint8Array>
 
   if (input.watermark) {
     const f = await doc.embedFont(StandardFonts.Helvetica);
-    const label = "dibuat dengan Piagam";
+    const label = "dibuat dengan Sararia Certificates";
     const size = 6;
     page.drawText(label, {
       x: input.widthPt - f.widthOfTextAtSize(label, size) - 8,

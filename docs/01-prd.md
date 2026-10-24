@@ -1,4 +1,6 @@
-# PRD — Piagam: Form → Sertifikat Otomatis (next-piagam)
+# PRD — Sararia Certificates: Form → Sertifikat Otomatis (next-piagam)
+
+> 2026-10-24: nama produk diganti dari Piagam (nama kerja) menjadi **Sararia Certificates**, domain `certificates.sararia.com`. Penyebutan "Piagam" di bawah ini adalah catatan sejarah.
 
 > Disusun: 2026-10-09. Keputusan diambil berdasarkan rekomendasi (pemilik mendelegasikan keputusan). Dokumen ini adalah sumber kebenaran untuk cakupan v1.
 

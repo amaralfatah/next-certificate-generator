@@ -96,14 +96,20 @@ describe("submitForm", () => {
   it("validates custom fields", async () => {
     const e = await makeEvent();
     await db.insert(formFields).values([
-      { eventId: e.id, key: "instansi", label: "Instansi", type: "text", required: true, position: 0 },
-      { eventId: e.id, key: "peran", label: "Peran", type: "select", required: false, options: ["Guru", "Siswa"], position: 1 },
+      { eventId: e.id, key: "name", label: "Nama lengkap", type: "short_text", role: "name", required: true, position: 0 },
+      { eventId: e.id, key: "instansi", label: "Instansi", type: "short_text", required: true, position: 1 },
+      { eventId: e.id, key: "peran", label: "Peran", type: "dropdown", required: false, options: ["Guru", "Siswa"], position: 2 },
+      { eventId: e.id, key: "topik", label: "Topik", type: "checkbox", required: true, options: ["A", "B", "C"], position: 3 },
+      { eventId: e.id, key: "puas", label: "Kepuasan", type: "scale", required: false, config: { min: 1, max: 5 }, position: 4 },
     ]);
-    const bad = await submitForm(db, input(e.slug, 1, { answers: { peran: "Kepala" } }));
+    const bad = await submitForm(db, input(e.slug, 1, { answers: { peran: "Kepala", topik: ["Z"], puas: "6" } }));
     expect(bad).toMatchObject({ ok: false, code: "invalid" });
-    if (!bad.ok) expect(Object.keys(bad.fieldErrors ?? {})).toEqual(expect.arrayContaining(["instansi", "peran"]));
-    const good = await submitForm(db, input(e.slug, 1, { answers: { instansi: "SMAN 1", peran: "Guru" } }));
+    if (!bad.ok) expect(Object.keys(bad.fieldErrors ?? {}).sort()).toEqual(["instansi", "peran", "puas", "topik"]);
+    const good = await submitForm(db, input(e.slug, 1, { answers: { instansi: "SMAN 1", peran: "Guru", topik: ["C", "A"], puas: "4" } }));
     expect(good.ok).toBe(true);
+    const [sub] = await db.select().from(submissions).where(eq(submissions.eventId, e.id));
+    // Name stays in its own column; checkbox answers keep the organizer's option order.
+    expect(sub.answers).toEqual({ instansi: "SMAN 1", peran: "Guru", topik: ["A", "C"], puas: "4" });
   });
 
   it("rejects names over 80 characters", async () => {

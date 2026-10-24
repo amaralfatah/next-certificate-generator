@@ -1,6 +1,8 @@
-# Piagam
+# Sararia Certificates
 
-Form → sertifikat otomatis. Peserta mengisi form, sertifikat PDF bernomor unik langsung bisa diunduh, salinannya dikirim ke email, dan keasliannya bisa dicek lewat QR di `/v/<nomor>`. Bagian dari Caang Labs. Spesifikasi lengkap: [docs/01-prd.md](docs/01-prd.md).
+Dulu bernama kerja Piagam. Nama folder, nama paket (`next-piagam`), cookie dan nama internal lain masih memakai `piagam`; itu hanya untuk developer dan tidak tampil di UI.
+
+Form → sertifikat otomatis. Peserta mengisi form, sertifikat PDF bernomor unik langsung bisa diunduh, salinannya dikirim ke email, dan keasliannya bisa dicek lewat QR di `/v/<number>`. Bagian dari keluarga aplikasi Sararia ([sararia.com](https://sararia.com)). Spesifikasi lengkap: [docs/01-prd.md](docs/01-prd.md).
 
 ## Menjalankan
 
@@ -34,9 +36,9 @@ npm run db:migrate
 ```
 app/
   page.tsx                  landing
-  masuk/                    login (Google, atau dev login lokal)
-  dasbor/                   dashboard penyelenggara (dilindungi sesi)
-    acara/[id]/             ringkasan · template · form · pengaturan · peserta
+  login/                    login (Google, atau dev login lokal)
+  forms/                    daftar formulir penyelenggara (dilindungi sesi)
+    [id]/                   pertanyaan · responses · certificate · settings
   f/[slug]/                 form peserta (publik, mobile-first)
   v/, v/[number]/           verifikasi sertifikat (publik)
   api/f/[slug]/submit       submit form → nomor → PDF → email (after())
@@ -45,10 +47,10 @@ lib/
   pdf/                      render sertifikat (pdf-lib, fungsi murni + tes)
   certificates/             submit (transaksi + penomoran), issue (PDF, email)
   db/                       skema Drizzle + klien (Neon / pg / PGlite)
-  storage/                  R2 (aws4fetch) atau file lokal, URL bertanda tangan
+  storage/                  Neon Object Storage / R2 (aws4fetch) atau file lokal, URL bertanda tangan
   mail/                     Resend
   security/                 hash, token, rate limit (Postgres), Turnstile
-  auth/                     sesi JWT (jose) + Google OAuth (arctic)
+  auth/                     sesi JWT (jose) + Neon Auth (Google)
 ```
 
 ## Keputusan teknis

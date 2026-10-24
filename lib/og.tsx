@@ -7,21 +7,27 @@ export const OG_SIZE = { width: 1200, height: 630 };
 
 const font = (id: string) => readFile(path.join(process.cwd(), "public", "fonts", `${id}.ttf`));
 
-/** Seal mark as an SVG data URI (Satori renders <img>, not inline SVG children). */
-function sealUri() {
-  const teeth = 28;
-  const pts = Array.from({ length: teeth * 2 }, (_, i) => {
-    const a = (i / (teeth * 2)) * Math.PI * 2;
-    const r = i % 2 === 0 ? 48 : 44.5;
-    return `${(50 + r * Math.cos(a)).toFixed(2)},${(50 + r * Math.sin(a)).toFixed(2)}`;
-  }).join(" ");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><polygon points="${pts}" fill="#b23b22"/><circle cx="50" cy="50" r="36" fill="none" stroke="rgba(255,255,255,.4)" stroke-width="1.2"/><path d="M36 51 l9 9 l19 -20" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+/**
+ * The Sararia Certificates glyph (components/seal.tsx Mark) as an SVG data URI, since Satori renders
+ * <img>, not inline SVG children. Rosette in the app's blue (--seal), ribbon tails in --seal-ink.
+ */
+function markUri() {
+  const shape = (d: string, fill: string) => `<path d="${d}" fill="${fill}" stroke="${fill}" stroke-width="1.2" stroke-linejoin="round"/>`;
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="15 15 70 70">` +
+    shape("M48.6 71.57A30.6 30.6 0 0 1 33.4 66.71L28.4 84.4L35.2 79.2L41.6 84.4Z", "#005bab") +
+    shape("M51.4 71.57A30.6 30.6 0 0 0 66.6 66.71L71.6 84.4L64.8 79.2L58.4 84.4Z", "#005bab") +
+    shape(
+      "M50 15.6L55.69 19.75L62.7 19L65.56 25.44L72 28.3L71.25 35.31L75.4 41L71.25 46.69L72 53.7L65.56 56.56L62.7 63L55.69 62.25L50 66.4L44.31 62.25L37.3 63L34.44 56.56L28 53.7L28.75 46.69L24.6 41L28.75 35.31L28 28.3L34.44 25.44L37.3 19L44.31 19.75Z",
+      "#0075de",
+    ) +
+    `</svg>`;
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
 }
 
 /** Shared social card: ivory paper, double gold rule, title in Playfair. */
 export async function ogCard({ eyebrow, title, footer }: { eyebrow: string; title: string; footer: string }) {
-  const [display, sans] = await Promise.all([font("playfair-display-700"), font("montserrat-700")]);
+  const [display, sans, brand] = await Promise.all([font("playfair-display-700"), font("montserrat-700"), font("inter-600")]);
   return new ImageResponse(
     (
       <div style={{ width: "100%", height: "100%", display: "flex", background: "#1c2a3a", padding: 28 }}>
@@ -54,10 +60,12 @@ export async function ogCard({ eyebrow, title, footer }: { eyebrow: string; titl
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", fontFamily: "Montserrat", fontSize: 24, color: "#5b6472" }}>{footer}</div>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={sealUri()} width={64} height={64} alt="" />
-              <div style={{ display: "flex", fontFamily: "Playfair", fontSize: 36, color: "#1c2a3a" }}>Piagam</div>
+              <img src={markUri()} width={44} height={44} alt="" />
+              <div style={{ display: "flex", fontFamily: "Inter", fontSize: 30, letterSpacing: "-0.045em", color: "#1c2a3a" }}>
+                Sararia Certificates
+              </div>
             </div>
           </div>
         </div>
@@ -68,6 +76,7 @@ export async function ogCard({ eyebrow, title, footer }: { eyebrow: string; titl
       fonts: [
         { name: "Playfair", data: display, weight: 700, style: "normal" },
         { name: "Montserrat", data: sans, weight: 700, style: "normal" },
+        { name: "Inter", data: brand, weight: 600, style: "normal" },
       ],
     },
   );

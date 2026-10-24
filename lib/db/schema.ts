@@ -11,6 +11,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { Answers, QuestionConfig } from "@/lib/forms";
 import type { TemplateField } from "@/lib/pdf/types";
 
 const id = () => uuid("id").primaryKey().defaultRandom();
@@ -33,6 +34,7 @@ export const events = pgTable(
     slug: text("slug").notNull().unique(),
     title: text("title").notNull(),
     date: text("date").notNull(), // ISO yyyy-mm-dd, a calendar date with no time zone
+    endDate: text("end_date"), // last day of a multi-day event; null for a one-day event
     organizerLabel: text("organizer_label").notNull(),
     description: text("description").notNull().default(""),
     status: text("status", { enum: ["draft", "open", "closed"] }).notNull().default("draft"),
@@ -73,12 +75,21 @@ export const formFields = pgTable(
       .references(() => events.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
     label: text("label").notNull(),
-    type: text("type", { enum: ["text", "email", "select", "number"] }).notNull(),
+    type: text("type", {
+      enum: ["short_text", "paragraph", "radio", "checkbox", "dropdown", "date", "time", "scale", "number", "email"],
+    }).notNull(),
+    // "name" and "email" questions feed submissions.name/email (certificate name, one response per email).
+    role: text("role", { enum: ["name", "email"] }),
+    help: text("help").notNull().default(""),
     required: boolean("required").notNull().default(false),
     options: jsonb("options").$type<string[]>().notNull().default([]),
+    config: jsonb("config").$type<QuestionConfig>(),
     position: integer("position").notNull().default(0),
   },
-  (t) => [uniqueIndex("form_fields_event_key_idx").on(t.eventId, t.key)],
+  (t) => [
+    uniqueIndex("form_fields_event_key_idx").on(t.eventId, t.key),
+    uniqueIndex("form_fields_event_role_idx").on(t.eventId, t.role).where(sql`${t.role} is not null`),
+  ],
 );
 
 export const submissions = pgTable(
@@ -90,7 +101,7 @@ export const submissions = pgTable(
       .references(() => events.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     email: text("email").notNull(),
-    answers: jsonb("answers").$type<Record<string, string>>().notNull().default({}),
+    answers: jsonb("answers").$type<Answers>().notNull().default({}),
     ipHash: text("ip_hash"),
     createdAt: createdAt(),
   },

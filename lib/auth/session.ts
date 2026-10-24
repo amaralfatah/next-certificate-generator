@@ -66,6 +66,6 @@ export const currentOrganizer = cache(async () => {
 
 export async function requireOrganizer() {
   const organizer = await currentOrganizer();
-  if (!organizer) redirect("/masuk");
+  if (!organizer) redirect("/login");
   return organizer;
 }

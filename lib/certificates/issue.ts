@@ -3,6 +3,7 @@ import { and, count, eq, gte, sql } from "drizzle-orm";
 import type { DB } from "@/lib/db/client";
 import { certificates, events, submissions, templates, type Event, type Template } from "@/lib/db/schema";
 import { env } from "@/lib/env";
+import { type Answers, answerText } from "@/lib/forms";
 import { formatEventDate } from "@/lib/i18n";
 import { certificateMail, sendMail } from "@/lib/mail";
 import { loadFont } from "@/lib/pdf/fonts.server";
@@ -15,14 +16,14 @@ export const pdfKeyFor = (eventId: string, number: string) => `events/${eventId}
 export const pdfFileName = (number: string) => `sertifikat-${number}.pdf`;
 
 export function certificateValues(
-  event: Pick<Event, "title" | "date" | "organizerLabel">,
-  p: { name: string; number: string; answers: Record<string, string> },
+  event: Pick<Event, "title" | "date" | "endDate" | "organizerLabel">,
+  p: { name: string; number: string; answers: Answers },
 ): Record<string, string> {
   return {
-    ...p.answers,
+    ...Object.fromEntries(Object.entries(p.answers).map(([k, v]) => [k, answerText(v)])),
     nama: p.name,
     acara: event.title,
-    tanggal: formatEventDate(event.date),
+    tanggal: formatEventDate(event.date, event.endDate),
     nomor: p.number,
     penyelenggara: event.organizerLabel,
   };
@@ -91,7 +92,7 @@ export async function emailCertificate(db: DB, certificateId: string) {
   try {
     const row = await loadCertificate(db, certificateId);
     if (!row || row.cert.status === "revoked" || !row.cert.pdfKey) return;
-    if (env.resend && (await emailsSentToday(db)) >= env.emailDailyLimit) {
+    if (env.mailEnabled && (await emailsSentToday(db)) >= env.emailDailyLimit) {
       await setStatus("failed");
       return;
     }

@@ -5,15 +5,13 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
-const TABS = [
-  { href: "", label: "Ringkasan" },
-  { href: "/template", label: "Template" },
-  { href: "/form", label: "Form" },
-  { href: "/pengaturan", label: "Pengaturan" },
-  { href: "/peserta", label: "Peserta" },
-];
-
-export function EventTabs({ base }: { base: string }) {
+export function EventTabs({ base, responses }: { base: string; responses: number }) {
+  const TABS = [
+    { href: "", label: "Pertanyaan" },
+    { href: "/responses", label: "Respons", count: responses },
+    { href: "/certificate", label: "Sertifikat" },
+    { href: "/settings", label: "Setelan" },
+  ];
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
   // On narrow screens the strip scrolls; keep the current tab in view so the user can see where they are.
@@ -26,7 +24,12 @@ export function EventTabs({ base }: { base: string }) {
     if (left < box.left || right > box.right) nav.scrollLeft += right - box.right + 16;
   }, [pathname]);
   return (
-    <nav ref={navRef} className="-mb-px flex gap-1 overflow-x-auto [scrollbar-width:none]" aria-label="Bagian acara">
+    // The right edge fades out on narrow screens so a clipped tab reads as "scroll for more".
+    <nav
+      ref={navRef}
+      className="-mb-px flex gap-1 overflow-x-auto [scrollbar-width:none] max-sm:[mask-image:linear-gradient(to_right,#000_calc(100%-2rem),transparent)]"
+      aria-label="Bagian formulir"
+    >
       {TABS.map((t) => {
         const href = base + t.href;
         const active = pathname === href;
@@ -36,11 +39,12 @@ export function EventTabs({ base }: { base: string }) {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "relative shrink-0 px-3 py-3 text-sm font-semibold transition-colors",
+              "relative shrink-0 px-3 py-3 text-sm font-semibold transition-[color,opacity] active:opacity-60 active:duration-75",
               active ? "text-ink" : "text-muted hover:text-ink",
             )}
           >
             {t.label}
+            {t.count ? <span className="num ml-1.5 rounded-full bg-paper-2 px-1.5 py-0.5 text-xs font-medium text-ink-2">{t.count}</span> : null}
             <span
               className={cn(
                 "absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-seal transition-transform duration-200",

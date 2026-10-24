@@ -12,7 +12,7 @@ export const maxDuration = 30;
 const bodySchema = z.object({
   name: z.string().max(200),
   email: z.string().max(300),
-  answers: z.record(z.string(), z.string().max(500)).default({}),
+  answers: z.record(z.string(), z.union([z.string().max(2000), z.array(z.string().max(200)).max(50)])).default({}),
   attendanceCode: z.string().max(64).optional(),
   turnstileToken: z.string().max(4096).nullable().optional(),
 });

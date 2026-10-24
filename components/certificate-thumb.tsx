@@ -13,7 +13,7 @@ export async function CertificateThumb({
   template,
   className,
 }: {
-  event: Pick<Event, "title" | "date" | "organizerLabel" | "numberPrefix">;
+  event: Pick<Event, "title" | "date" | "endDate" | "organizerLabel" | "numberPrefix">;
   template: Template;
   className?: string;
 }) {
@@ -22,14 +22,14 @@ export async function CertificateThumb({
   const values = {
     nama: "Nama Peserta",
     acara: event.title,
-    tanggal: formatEventDate(event.date),
+    tanggal: formatEventDate(event.date, event.endDate),
     penyelenggara: event.organizerLabel,
     nomor: formatCertificateNumber(event.numberPrefix, Number(event.date.slice(0, 4)), 1),
   };
 
   if (!preset && !bg) {
     return (
-      <div className={cn("laid grid aspect-video place-items-center bg-paper-2 text-muted", className)}>
+      <div className={cn("grid aspect-video place-items-center bg-paper-2 text-muted", className)}>
         <span className="flex flex-col items-center gap-1.5 text-xs font-medium">
           <ImageOff className="size-5" aria-hidden />
           Desain belum dipilih

@@ -2,7 +2,7 @@
 
 import { Download, MoreHorizontal, RefreshCw, Send, ShieldBan, ShieldCheck, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { deleteParticipant, resendCertificate, retryCertificatePdf, setCertificateStatus } from "@/app/dasbor/actions";
+import { deleteParticipant, resendCertificate, retryCertificatePdf, setCertificateStatus } from "@/app/forms/actions";
 import { cn } from "@/lib/utils";
 
 export function ParticipantActions({
@@ -104,7 +104,7 @@ export function ParticipantActions({
           aria-label={`Aksi untuk ${name}`}
           style={{ top: open.top, bottom: open.bottom, right: open.right }}
           className={cn(
-            "fixed z-40 w-52 rounded-lg border border-line bg-card p-1 shadow-[0_12px_32px_-8px_oklch(0.27_0.04_255/0.3)] rise [animation-duration:160ms]",
+            "fixed z-40 w-52 rounded-lg border border-line bg-card p-1 shadow-soft rise [animation-duration:160ms]",
             open.bottom !== undefined ? "origin-bottom-right" : "origin-top-right",
           )}
         >
@@ -129,7 +129,7 @@ export function ParticipantActions({
           {status === "valid" ? (
             <button
               role="menuitem"
-              className={cn(item, "text-seal-ink [&_svg]:text-seal-ink")}
+              className={cn(item, "text-danger [&_svg]:text-danger")}
               onClick={() =>
                 run(
                   () => setCertificateStatus(certificateId, "revoked"),
@@ -147,7 +147,7 @@ export function ParticipantActions({
           <div className="my-1 h-px bg-line" />
           <button
             role="menuitem"
-            className={cn(item, "text-seal-ink [&_svg]:text-seal-ink")}
+            className={cn(item, "text-danger [&_svg]:text-danger")}
             onClick={() =>
               run(
                 () => deleteParticipant(certificateId),
