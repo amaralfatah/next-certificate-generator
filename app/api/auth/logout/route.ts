@@ -5,6 +5,6 @@ import { env } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   await endSession();
-  if (env.neonAuth) await neonAuth.signOut().catch(() => {});
+  if (env.neonAuth) await neonAuth().signOut().catch(() => {});
   return NextResponse.redirect(new URL("/", req.url), 303);
 }

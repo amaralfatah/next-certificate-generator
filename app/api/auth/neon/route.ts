@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
   if (!env.neonAuth) return back("config");
 
   try {
-    const { data: session } = await neonAuth.getSession();
+    const { data: session } = await neonAuth().getSession();
     const user = session?.user;
     if (!user?.email) return back("google");
     if (user.emailVerified === false) return back("email");
