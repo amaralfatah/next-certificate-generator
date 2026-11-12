@@ -2,7 +2,7 @@
 
 Dulu bernama kerja Piagam. Nama folder, nama paket (`next-piagam`), cookie dan nama internal lain masih memakai `piagam`; itu hanya untuk developer dan tidak tampil di UI.
 
-Form → sertifikat otomatis. Peserta mengisi form, sertifikat PDF bernomor unik langsung bisa diunduh, salinannya dikirim ke email, dan keasliannya bisa dicek lewat QR di `/v/<number>`. Bagian dari keluarga aplikasi Sararia ([sararia.com](https://sararia.com)). Spesifikasi lengkap: [docs/01-prd.md](docs/01-prd.md).
+Form → sertifikat otomatis. Peserta mengisi form, sertifikat PDF bernomor unik langsung bisa diunduh, salinannya dikirim ke email, dan keasliannya bisa dicek lewat QR di `/v/<number>`. Bagian dari keluarga aplikasi Sararia ([sararia.com](https://sararia.com)).
 
 ## Menjalankan
 
@@ -65,6 +65,7 @@ lib/
 - **Template dan form terkunci** setelah sertifikat pertama terbit; gunakan *Duplikat acara*.
 - **Salah ketik nama:** penyelenggara menghapus entri peserta (menu Peserta → Hapus entri), lalu peserta mengisi ulang dengan email yang sama.
 - **Kegagalan tidak menghilangkan data.** PDF gagal → sertifikat berstatus tertunda, peserta dan penyelenggara bisa coba lagi. Email gagal → status `failed`, bisa kirim ulang.
+- **Kirim ulang massal.** Halaman Respons menghitung sertifikat yang belum sampai (PDF tertunda atau email gagal) dan menawarkan *Kirim ulang semua*. Satu tekan memproses 20 sertifikat (`RETRY_BATCH`) dan berhenti begitu batas email harian tercapai.
 - **Privasi.** Halaman verifikasi hanya menampilkan nama, acara, tanggal, penyelenggara, nomor. IP disimpan sebagai hash. Kode kehadiran disimpan dengan scrypt.
 
 ## Keterbatasan v1

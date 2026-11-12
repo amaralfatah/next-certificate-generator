@@ -1,14 +1,25 @@
 import "server-only";
 import { and, count, desc, eq, ilike, or } from "drizzle-orm";
+import { isUndelivered } from "@/lib/certificates/issue";
 import { certificates, db, submissions } from "@/lib/db";
 
 export const PAGE_SIZE = 50;
 
-export async function listParticipants(eventId: string, q: string, page: number) {
+export const PARTICIPANT_FILTERS = ["all", "undelivered", "revoked"] as const;
+export type ParticipantFilter = (typeof PARTICIPANT_FILTERS)[number];
+
+const FILTER_WHERE = {
+  all: undefined,
+  undelivered: isUndelivered,
+  revoked: eq(certificates.status, "revoked"),
+} as const;
+
+export async function listParticipants(eventId: string, q: string, page: number, filter: ParticipantFilter = "all") {
   const database = await db();
   const term = q.trim();
   const where = and(
     eq(submissions.eventId, eventId),
+    FILTER_WHERE[filter],
     term
       ? or(
           ilike(submissions.name, `%${term}%`),

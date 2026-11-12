@@ -2,16 +2,20 @@ import { ChevronLeft, ChevronRight, FileDown, Inbox, Search, Users } from "lucid
 import Link from "next/link";
 import { AcceptingToggle } from "@/components/accepting-toggle";
 import { ParticipantActions } from "@/components/participant-actions";
+import { ResendUndelivered } from "@/components/resend-undelivered";
 import { ResponseSummary } from "@/components/response-summary";
 import { Badge, ButtonLink, Card, Input } from "@/components/ui";
+import { undeliveredCount } from "@/lib/certificates/issue";
 import { env } from "@/lib/env";
 import { getFormFields, getOwnedEvent } from "@/lib/events";
 import { answerText, formAvailability } from "@/lib/forms";
 import { formatDateTime, formatNumber } from "@/lib/i18n";
-import { allAnswers, listParticipants, PAGE_SIZE } from "@/lib/participants";
+import { allAnswers, listParticipants, PAGE_SIZE, PARTICIPANT_FILTERS, type ParticipantFilter } from "@/lib/participants";
 import { summarize } from "@/lib/responses";
 import { cn } from "@/lib/utils";
 import { signToken } from "@/lib/security/crypto";
+
+const FILTER_LABEL: Record<ParticipantFilter, string> = { all: "Semua", undelivered: "Belum terkirim", revoked: "Dicabut" };
 
 const EMAIL_BADGE = {
   sent: { tone: "ok", label: "Terkirim" },
@@ -26,8 +30,9 @@ export default async function ResponsesPage({ params, searchParams }: PageProps<
   const q = typeof sp.q === "string" ? sp.q.slice(0, 100) : "";
   const page = Math.max(1, Number(sp.page) || 1);
   const view = sp.view === "people" ? "people" : "summary";
-  const { event } = await getOwnedEvent(id);
-  const [fields, answers] = await Promise.all([getFormFields(id), allAnswers(id)]);
+  const filter = PARTICIPANT_FILTERS.find((f) => f === sp.status) ?? "all";
+  const { event, db: database } = await getOwnedEvent(id);
+  const [fields, answers, undelivered] = await Promise.all([getFormFields(id), allAnswers(id), undeliveredCount(database, id)]);
   const totalResponses = answers.length;
   const availability = formAvailability(event, totalResponses);
   const autoClosedReason =
@@ -68,6 +73,7 @@ export default async function ResponsesPage({ params, searchParams }: PageProps<
         </Card>
       ) : (
         <>
+        <ResendUndelivered eventId={id} count={undelivered} showLink={!(view === "people" && filter === "undelivered")} />
         <nav className="flex gap-1 rounded-lg bg-paper-2 p-1 text-sm font-semibold" aria-label="Tampilan respons">
           {[
             { v: "summary", label: "Ringkasan" },
@@ -87,7 +93,7 @@ export default async function ResponsesPage({ params, searchParams }: PageProps<
         {view === "summary" ? (
           <ResponseSummary summaries={summarize(fields, answers)} total={totalResponses} />
         ) : (
-          <PeopleTable id={id} q={q} page={page} custom={custom} />
+          <PeopleTable id={id} q={q} page={page} filter={filter} custom={custom} />
         )}
         </>
       )}
@@ -95,41 +101,81 @@ export default async function ResponsesPage({ params, searchParams }: PageProps<
   );
 }
 
-async function PeopleTable({ id, q, page, custom }: { id: string; q: string; page: number; custom: { key: string; label: string }[] }) {
-  const { rows, total } = await listParticipants(id, q, page);
+async function PeopleTable({
+  id,
+  q,
+  page,
+  filter,
+  custom,
+}: {
+  id: string;
+  q: string;
+  page: number;
+  filter: ParticipantFilter;
+  custom: { key: string; label: string }[];
+}) {
+  const { rows, total } = await listParticipants(id, q, page, filter);
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const href = (p: number) => `?${new URLSearchParams({ view: "people", ...(q ? { q } : {}), ...(p > 1 ? { page: String(p) } : {}) })}`;
+  const query = (over: { status?: ParticipantFilter; page?: number }) => {
+    const status = over.status ?? filter;
+    const p = over.page ?? 1;
+    return `?${new URLSearchParams({ view: "people", ...(q ? { q } : {}), ...(status !== "all" ? { status } : {}), ...(p > 1 ? { page: String(p) } : {}) })}`;
+  };
+  const href = (p: number) => query({ page: p });
+  const filtered = !!q || filter !== "all";
 
   return (
     <div>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <form className="relative w-full sm:max-w-sm" role="search">
           <input type="hidden" name="view" value="people" />
+          {filter !== "all" && <input type="hidden" name="status" value={filter} />}
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted" aria-hidden />
           <label htmlFor="q" className="sr-only">
             Cari respons
           </label>
           <Input id="q" name="q" defaultValue={q} placeholder="Cari nama, email, atau nomor" className="pl-9" />
         </form>
-        {(q || total > 0) && (
+        {(filtered || total > 0) && (
           <ButtonLink href={`/api/forms/${id}/responses-csv`} variant="outline" prefetch={false}>
             <FileDown /> Ekspor CSV
           </ButtonLink>
         )}
       </div>
 
-      <p className="mt-4 text-sm text-muted" aria-live="polite">
-        {q ? `${formatNumber(total)} hasil untuk "${q}"` : `${formatNumber(total)} respons`}
-      </p>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <nav className="flex flex-wrap gap-1.5 text-sm" aria-label="Saring respons">
+          {PARTICIPANT_FILTERS.map((f) => (
+            <Link
+              key={f}
+              href={query({ status: f })}
+              aria-current={filter === f ? "true" : undefined}
+              className={cn(
+                "rounded-full border px-3 py-1 font-medium transition-colors pointer-coarse:py-2",
+                filter === f ? "border-ink bg-ink text-paper" : "border-line-strong text-ink-2 hover:bg-paper-2 hover:text-ink",
+              )}
+            >
+              {FILTER_LABEL[f]}
+            </Link>
+          ))}
+        </nav>
+        <p className="text-sm text-muted" aria-live="polite">
+          {q ? `${formatNumber(total)} hasil untuk "${q}"` : `${formatNumber(total)} respons`}
+        </p>
+      </div>
 
       <Card className="mt-3 overflow-hidden">
         {rows.length === 0 ? (
           <div className="flex flex-col items-center bg-paper px-6 py-14 text-center">
             <Users className="size-6 text-muted" aria-hidden />
-            <p className="mt-3 font-semibold text-ink">{q ? "Tidak ada respons yang cocok" : "Belum ada respons"}</p>
+            <p className="mt-3 font-semibold text-ink">{filtered ? "Tidak ada respons yang cocok" : "Belum ada respons"}</p>
             <p className="mt-1 max-w-sm text-sm text-ink-2">
               {q
                 ? "Coba kata kunci lain, atau cari dengan nomor sertifikat."
+                : filter === "undelivered"
+                  ? "Semua sertifikat sudah sampai ke pesertanya."
+                  : filter === "revoked"
+                    ? "Tidak ada sertifikat yang dicabut."
                 : "Bagikan formulir lewat tombol Bagikan. Setiap yang mengisi akan muncul di sini."}
             </p>
           </div>

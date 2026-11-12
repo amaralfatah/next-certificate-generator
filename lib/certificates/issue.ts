@@ -1,5 +1,5 @@
 import "server-only";
-import { and, count, eq, gte, sql } from "drizzle-orm";
+import { and, count, eq, gte, isNull, or, sql } from "drizzle-orm";
 import type { DB } from "@/lib/db/client";
 import { certificates, events, submissions, templates, type Event, type Template } from "@/lib/db/schema";
 import { env } from "@/lib/env";
@@ -115,4 +115,52 @@ export async function emailCertificate(db: DB, certificateId: string) {
     console.error("emailCertificate failed", certificateId, e);
     await setStatus("failed").catch(() => {});
   }
+}
+
+/** How many certificates one "Kirim ulang" press works through, so the request stays well inside a function's time limit. */
+export const RETRY_BATCH = 20;
+
+/** A valid certificate that never reached its participant: the PDF is still pending or the email failed. */
+export const isUndelivered = and(
+  eq(certificates.status, "valid"),
+  or(isNull(certificates.pdfKey), eq(certificates.emailStatus, "failed")),
+);
+const undelivered = (eventId: string) => and(eq(submissions.eventId, eventId), isUndelivered);
+
+export async function undeliveredCount(db: DB, eventId: string) {
+  const [{ n }] = await db
+    .select({ n: count() })
+    .from(certificates)
+    .innerJoin(submissions, eq(submissions.id, certificates.submissionId))
+    .where(undelivered(eventId));
+  return n;
+}
+
+const dailyLimitReached = async (db: DB) => env.mailEnabled && (await emailsSentToday(db)) >= env.emailDailyLimit;
+
+/**
+ * Rebuilds pending PDFs and re-sends failed emails for one event, oldest first, one batch per call.
+ * Stops as soon as the daily email limit is reached so the remaining ones are not retried for nothing.
+ */
+export async function retryUndelivered(db: DB, eventId: string, batch = RETRY_BATCH) {
+  const before = await undeliveredCount(db, eventId);
+  const rows = await db
+    .select({ id: certificates.id, pdfKey: certificates.pdfKey })
+    .from(certificates)
+    .innerJoin(submissions, eq(submissions.id, certificates.submissionId))
+    .where(undelivered(eventId))
+    .orderBy(certificates.createdAt)
+    .limit(batch);
+  let limitReached = false;
+  for (const row of rows) {
+    if (!row.pdfKey && !(await issuePdf(db, row.id))) continue;
+    if ((limitReached = await dailyLimitReached(db))) {
+      // The PDF exists now, so the participant can download it; the email waits for tomorrow's quota.
+      if (!row.pdfKey) await db.update(certificates).set({ emailStatus: "failed" }).where(eq(certificates.id, row.id));
+      continue;
+    }
+    await emailCertificate(db, row.id);
+  }
+  const remaining = await undeliveredCount(db, eventId);
+  return { fixed: before - remaining, remaining, limitReached, mailEnabled: env.mailEnabled };
 }

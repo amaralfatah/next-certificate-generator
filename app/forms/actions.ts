@@ -7,12 +7,12 @@ import { after } from "next/server";
 import { imageSize } from "image-size";
 import { z } from "zod";
 import { requireOrganizer } from "@/lib/auth/session";
-import { emailCertificate, issuePdf } from "@/lib/certificates/issue";
+import { emailCertificate, issuePdf, retryUndelivered } from "@/lib/certificates/issue";
 import { certificates, db, events, formFields, submissions, templates } from "@/lib/db";
 import { getOwnedEvent, publishBlockers } from "@/lib/events";
 import { FONT_IDS } from "@/lib/fonts";
 import { CHOICE_TYPES, DEFAULT_SCALE, fieldKey, PRINTABLE_TYPES, QUESTION_TYPES } from "@/lib/forms";
-import { fromLocalInput } from "@/lib/i18n";
+import { formatNumber, fromLocalInput } from "@/lib/i18n";
 import { defaultLayout, pageSizeFor } from "@/lib/pdf/layout";
 import { getPreset } from "@/lib/pdf/presets";
 import { BUILTIN_KEYS } from "@/lib/pdf/types";
@@ -459,4 +459,24 @@ export async function retryCertificatePdf(certificateId: string): Promise<FormSt
   if (ok && cert.emailStatus !== "sent") after(() => emailCertificate(database, certificateId));
   revalidatePath(`/forms/${eventId}`, "layout");
   return ok ? { ok: true, message: "PDF berhasil dibuat." } : { message: "PDF masih gagal dibuat." };
+}
+
+/** "Kirim ulang semua": works through the event's pending PDFs and failed emails one batch at a time. */
+export async function resendUndelivered(eventId: string): Promise<FormState> {
+  const { db: database } = await getOwnedEvent(eventId);
+  const { fixed, remaining, limitReached, mailEnabled } = await retryUndelivered(database, eventId);
+  revalidatePath(`/forms/${eventId}`, "layout");
+  if (remaining === 0) {
+    return {
+      ok: true,
+      message: mailEnabled
+        ? `Beres, ${formatNumber(fixed)} sertifikat sudah terkirim ke pesertanya.`
+        : "Email tidak dikonfigurasi (mode lokal), jadi tidak ada yang dikirim.",
+    };
+  }
+  if (limitReached) {
+    return { message: `Batas email hari ini sudah habis. ${formatNumber(remaining)} sertifikat lagi bisa kamu kirim ulang besok.` };
+  }
+  if (fixed === 0) return { message: "Belum ada yang berhasil dikirim. Coba lagi beberapa saat lagi." };
+  return { ok: true, message: `${formatNumber(fixed)} berhasil, ${formatNumber(remaining)} lagi belum. Tekan Kirim ulang semua sekali lagi.` };
 }
