@@ -1,6 +1,6 @@
 # Desain: Piagam sebagai formulir bersertifikat
 
-> Disusun 2026-10-24. Mengubah arah produk dari `docs/01-prd.md` (alur "acara → template → form → publikasi") menjadi aplikasi formulir yang terasa seperti Google Forms, dengan sertifikat sebagai hasil otomatis. Bagian PRD yang tidak disebut di sini (PDF, penomoran, verifikasi, keamanan, penyimpanan, email) tetap berlaku.
+> Disusun 2026-10-24. Mengubah arah produk dari alur "acara → template → form → publikasi" menjadi aplikasi formulir yang terasa seperti Google Forms, dengan sertifikat sebagai hasil otomatis. Keputusan teknis untuk PDF, penomoran, verifikasi, keamanan, penyimpanan, dan email dicatat di README.
 
 ## 1. Maksud
 
